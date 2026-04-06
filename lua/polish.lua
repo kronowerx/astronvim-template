@@ -15,6 +15,10 @@ vim.o.expandtab = false
 -- Disable mouse
 vim.o.mouse = ''
 
+-- Remap prev and next buffer
+vim.api.nvim_set_keymap('n', '<S-Tab>', ':bprev<CR>', { noremap = true })
+vim.api.nvim_set_keymap('n', '<Tab>', ':bnext<CR>', { noremap = true })
+
 -- This will run last in the setup process.
 -- This is just pure lua so anything that doesn't
 -- fit in the normal config locations above can go here
