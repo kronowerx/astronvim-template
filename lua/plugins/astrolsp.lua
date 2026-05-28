@@ -39,11 +39,26 @@ return {
     },
     -- enable servers that you already have installed without mason
     servers = {
+      "gopls",
       -- "pyright"
     },
     -- customize language server configuration passed to `vim.lsp.config`
     -- client specific configuration can also go in `lsp/` in your configuration root (see `:h lsp-config`)
     config = {
+      gopls = {
+        settings = {
+          gopls = {
+            gofumpt = true,
+            staticcheck = true,
+            completeUnimported = true,
+            analyses = {
+              unusedparams = true,
+              unusedwrite = true,
+              nilness = true,
+            },
+          },
+        },
+      },
       -- ["*"] = { capabilities = {} }, -- modify default LSP client settings such as capabilities
     },
     -- customize how language servers are attached
