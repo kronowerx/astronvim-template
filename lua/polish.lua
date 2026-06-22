@@ -17,8 +17,11 @@ vim.o.shiftwidth = 4
 vim.o.expandtab = false
 
 -- Disable mouse
-vim.o.mouse = ''
+-- vim.o.mouse = ''
 
 -- Remap prev and next buffer
 vim.api.nvim_set_keymap('n', '<S-Tab>', ':bprev<CR>', { noremap = true })
 vim.api.nvim_set_keymap('n', '<Tab>', ':bnext<CR>', { noremap = true })
+
+-- Unset GCP creds JSON path
+vim.env.GOOGLE_APPLICATION_CREDENTIALS = nil

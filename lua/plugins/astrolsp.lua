@@ -60,6 +60,25 @@ return {
           },
         },
       },
+      pyright = {
+        settings = {
+          pyright = {
+            disableOrganizeImports = true,
+          },
+          python = {
+            analysis = {
+              ignore = { '*' },
+            },
+          },
+        },
+      },
+      ruff = {
+        init_options = {
+          settings = {
+            -- Let Ruff handle linting
+          },
+        },
+      },
       -- ["*"] = { capabilities = {} }, -- modify default LSP client settings such as capabilities
     },
     -- customize how language servers are attached
@@ -115,6 +134,9 @@ return {
     on_attach = function(client, bufnr)
       -- this would disable semanticTokensProvider for all clients
       -- client.server_capabilities.semanticTokensProvider = nil
+      if client.name == 'ruff' then
+        client.server_capabilities.hoverProvider = false
+      end
     end,
   },
 }
