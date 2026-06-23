@@ -19,9 +19,10 @@ vim.o.expandtab = false
 -- Disable mouse
 -- vim.o.mouse = ''
 
--- Remap prev and next buffer
-vim.api.nvim_set_keymap('n', '<S-Tab>', ':bprev<CR>', { noremap = true })
-vim.api.nvim_set_keymap('n', '<Tab>', ':bnext<CR>', { noremap = true })
+-- Buffer navigation (avoid remapping <Tab>, which is <C-i> in a terminal and
+-- would clobber jumplist-forward). <S-l>/<S-h> next/prev, matching ]b/[b.
+vim.keymap.set('n', '<S-l>', function() require('astrocore.buffer').nav(vim.v.count1) end, { desc = 'Next buffer' })
+vim.keymap.set('n', '<S-h>', function() require('astrocore.buffer').nav(-vim.v.count1) end, { desc = 'Previous buffer' })
 
 -- Unset GCP creds JSON path
 vim.env.GOOGLE_APPLICATION_CREDENTIALS = nil

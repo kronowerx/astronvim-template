@@ -34,10 +34,8 @@ return {
       },
       stdin = false,
     }
-
-    opts.format_on_save = {
-      timeout_ms = 3000,
-      lsp_format = "never",
-    }
+    -- format-on-save is owned by AstroLSP (see astrolsp.lua); conform just
+    -- supplies the Go formatters above. Defining opts.format_on_save here too
+    -- would bypass AstroLSP's settings (and the <Leader>uf autoformat toggle).
   end,
 }
