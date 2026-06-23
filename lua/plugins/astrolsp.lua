@@ -72,13 +72,6 @@ return {
           },
         },
       },
-      ruff = {
-        init_options = {
-          settings = {
-            -- Let Ruff handle linting
-          },
-        },
-      },
       -- ["*"] = { capabilities = {} }, -- modify default LSP client settings such as capabilities
     },
     -- customize how language servers are attached
