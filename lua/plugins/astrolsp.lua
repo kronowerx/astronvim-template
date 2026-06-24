@@ -41,6 +41,7 @@ return {
     -- enable servers that you already have installed without mason
     servers = {
       "gopls",
+      "lua_ls",
       "pyright", -- type-checking / nav / hover (analysis disabled below; ruff handles diagnostics)
       "ruff", -- linting + formatting; hover disabled in on_attach so pyright owns hover
     },
@@ -65,11 +66,6 @@ return {
         settings = {
           pyright = {
             disableOrganizeImports = true,
-          },
-          python = {
-            analysis = {
-              ignore = { '*' },
-            },
           },
         },
       },
@@ -128,9 +124,7 @@ return {
     on_attach = function(client, bufnr)
       -- this would disable semanticTokensProvider for all clients
       -- client.server_capabilities.semanticTokensProvider = nil
-      if client.name == 'ruff' then
-        client.server_capabilities.hoverProvider = false
-      end
+      if client.name == "ruff" then client.server_capabilities.hoverProvider = false end
     end,
   },
 }
