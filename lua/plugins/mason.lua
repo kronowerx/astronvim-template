@@ -9,8 +9,20 @@ return {
     opts = {
       -- Make sure to use the names found in `:Mason`
       ensure_installed = {
+        "docker-compose-language-service",
+        "dockerfile-language-server",
+        "gci",
+        "goimports",
+        "gopls",
+        "hadolint",
         "lua-language-server",
+        "pyright",
+        "ruff",
+        "rust-analyzer",
         "stylua",
+        "tree-sitter-cli",
+        "yaml-language-server",
+        "yamlfmt",
       },
     },
   },
