@@ -11,6 +11,10 @@ return {
     }
     opts.formatters_by_ft.lua = { "stylua" }
     opts.formatters_by_ft.python = { "ruff_organize_imports", "ruff_format" }
+    opts.formatters_by_ft.json = { "prettierd" }
+    opts.formatters_by_ft.jsonc = { "prettierd" }
+    opts.formatters_by_ft.markdown = { "prettierd" }
+    opts.formatters_by_ft.toml = { "taplo" }
 
     opts.formatters = opts.formatters or {}
 

@@ -44,6 +44,15 @@ return {
     -- customize language server configuration passed to `vim.lsp.config`
     -- client specific configuration can also go in `lsp/` in your configuration root (see `:h lsp-config`)
     config = {
+      yamlls = {
+        settings = {
+          yaml = {
+            schemas = {
+              kubernetes = "/*.yaml",
+            },
+          },
+        },
+      },
       gopls = {
         settings = {
           gopls = {
