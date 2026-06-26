@@ -10,6 +10,7 @@ return {
       "gci",
     }
     opts.formatters_by_ft.lua = { "stylua" }
+    opts.formatters_by_ft.python = { "ruff_organize_imports", "ruff_format" }
 
     opts.formatters = opts.formatters or {}
 
@@ -53,8 +54,10 @@ return {
       end,
       stdin = false,
     }
-    -- format-on-save is owned by AstroLSP (see astrolsp.lua); conform just
-    -- supplies the Go formatters above. Defining opts.format_on_save here too
-    -- would bypass AstroLSP's settings (and the <Leader>uf autoformat toggle).
+
+    opts.format_on_save = {
+      timeout_ms = 1000,
+      lsp_fallback = true,
+    }
   end,
 }

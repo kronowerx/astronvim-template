@@ -26,3 +26,7 @@ vim.keymap.set('n', '<S-h>', function() require('astrocore.buffer').nav(-vim.v.c
 
 -- Unset GCP creds JSON path
 vim.env.GOOGLE_APPLICATION_CREDENTIALS = nil
+
+-- Global settings (e.g. for neominimap float layout)
+vim.opt.wrap = false
+vim.opt.sidescrolloff = 36 -- Set a large value

@@ -40,10 +40,6 @@ return {
     },
     -- enable servers that you already have installed without mason
     servers = {
-      "gopls",
-      "lua_ls",
-      "pyrefly", -- type-checking / nav / hover (analysis disabled below; ruff handles diagnostics)
-      "ruff", -- linting + formatting; hover disabled in on_attach so pyrefly owns hover
     },
     -- customize language server configuration passed to `vim.lsp.config`
     -- client specific configuration can also go in `lsp/` in your configuration root (see `:h lsp-config`)
@@ -62,6 +58,13 @@ return {
           },
         },
       },
+      pyrefly = {
+        settings = {
+          pyrefly = {
+            preset = "default",
+          },
+        },
+      },
       -- ["*"] = { capabilities = {} }, -- modify default LSP client settings such as capabilities
     },
     -- customize how language servers are attached
@@ -71,6 +74,7 @@ return {
 
       -- the key is the server that is being setup with `vim.lsp.config`
       -- rust_analyzer = false, -- setting a handler to false will disable the set up of that language server
+      ruff = false, -- prevent mason-lspconfig from automatically starting the ruff LSP
     },
     -- Configure buffer local auto commands to add when attaching a language server
     autocmds = {
@@ -117,7 +121,6 @@ return {
     on_attach = function(client, bufnr)
       -- this would disable semanticTokensProvider for all clients
       -- client.server_capabilities.semanticTokensProvider = nil
-      if client.name == "ruff" then client.server_capabilities.hoverProvider = false end
     end,
   },
 }
