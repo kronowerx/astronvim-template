@@ -42,8 +42,8 @@ return {
     servers = {
       "gopls",
       "lua_ls",
-      "pyright", -- type-checking / nav / hover (analysis disabled below; ruff handles diagnostics)
-      "ruff", -- linting + formatting; hover disabled in on_attach so pyright owns hover
+      "pyrefly", -- type-checking / nav / hover (analysis disabled below; ruff handles diagnostics)
+      "ruff", -- linting + formatting; hover disabled in on_attach so pyrefly owns hover
     },
     -- customize language server configuration passed to `vim.lsp.config`
     -- client specific configuration can also go in `lsp/` in your configuration root (see `:h lsp-config`)
@@ -59,13 +59,6 @@ return {
               unusedwrite = true,
               nilness = true,
             },
-          },
-        },
-      },
-      pyright = {
-        settings = {
-          pyright = {
-            disableOrganizeImports = true,
           },
         },
       },

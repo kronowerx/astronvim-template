@@ -16,7 +16,7 @@ return {
         "gopls",
         "hadolint",
         "lua-language-server",
-        "pyright",
+        "pyrefly",
         "ruff",
         "rust-analyzer",
         "stylua",
