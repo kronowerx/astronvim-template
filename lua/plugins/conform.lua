@@ -19,8 +19,7 @@ return {
     opts.formatters = opts.formatters or {}
 
     local function get_go_module(ctx)
-      local utils = require("conform.util")
-      local root = utils.root_file({ "go.mod" })(ctx)
+      local root = vim.fs.root(ctx.dirname, { "go.mod" })
       if root then
         local file = io.open(root .. "/go.mod", "r")
         if file then
@@ -57,11 +56,6 @@ return {
         return args
       end,
       stdin = false,
-    }
-
-    opts.format_on_save = {
-      timeout_ms = 1000,
-      lsp_fallback = true,
     }
   end,
 }
