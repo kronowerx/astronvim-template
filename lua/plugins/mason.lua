@@ -15,6 +15,7 @@ return {
         "goimports",
         "gopls",
         "hadolint",
+        "helm-ls",
         "lua-language-server",
         "prettierd",
         "pyrefly",
