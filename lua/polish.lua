@@ -17,7 +17,7 @@ vim.o.shiftwidth = 4
 vim.o.expandtab = false
 
 -- Disable mouse
--- vim.o.mouse = ''
+vim.o.mouse = ''
 
 -- Buffer navigation (avoid remapping <Tab>, which is <C-i> in a terminal and
 -- would clobber jumplist-forward). <S-l>/<S-h> next/prev, matching ]b/[b.
