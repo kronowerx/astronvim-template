@@ -19,6 +19,9 @@ vim.o.expandtab = false
 -- Disable mouse
 vim.o.mouse = ''
 
+-- Hide AstroNvim's buffer tabline
+vim.o.showtabline = 0
+
 -- Buffer navigation (avoid remapping <Tab>, which is <C-i> in a terminal and
 -- would clobber jumplist-forward). <S-l>/<S-h> next/prev, matching ]b/[b.
 vim.keymap.set('n', '<S-l>', function() require('astrocore.buffer').nav(vim.v.count1) end, { desc = 'Next buffer' })
