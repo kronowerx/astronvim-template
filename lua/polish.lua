@@ -33,3 +33,10 @@ vim.env.GOOGLE_APPLICATION_CREDENTIALS = nil
 -- Global settings (e.g. for neominimap float layout)
 vim.opt.wrap = false
 vim.opt.sidescrolloff = 36 -- Set a large value
+
+-- Auto reload files changed on disk outside neovim
+vim.opt.autoread = true
+vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter', 'CursorHold', 'CursorHoldI' }, {
+  pattern = '*',
+  command = 'checktime',
+})
