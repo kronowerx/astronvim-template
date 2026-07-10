@@ -40,3 +40,11 @@ vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter', 'CursorHold', 'CursorHo
   pattern = '*',
   command = 'checktime',
 })
+
+-- Restart LSP client(s) for the current buffer
+vim.keymap.set('n', '<Leader>lR', function()
+  for _, client in ipairs(vim.lsp.get_clients { bufnr = 0 }) do
+    vim.lsp.stop_client(client.id)
+  end
+  vim.cmd.edit()
+end, { desc = 'Restart LSP (buffer)' })
