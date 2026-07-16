@@ -15,6 +15,10 @@ require("lazy").setup({
   { import = "plugins" },
 } --[[@as LazySpec]], {
   -- Configure any other `lazy.nvim` configuration options here
+  concurrency = 4, -- avoid splitting proxy bandwidth so thin that each fetch times out
+  git = {
+    timeout = 300, -- don't kill slow-but-progressing fetches through the proxy (was 120)
+  },
   install = { colorscheme = { "catppuccin-mocha", "astrotheme", "habamax" } },
   ui = { backdrop = 100 },
   performance = {
