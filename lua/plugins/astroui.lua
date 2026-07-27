@@ -11,7 +11,10 @@ return {
   ---@type AstroUIOpts
   opts = {
     -- change colorscheme
-    colorscheme = "catppuccin-macchiato",
+    -- NOTE: bare `catppuccin`, not `catppuccin-macchiato`. The suffixed variants pass the
+    -- flavour explicitly and would override (and silently ignore) the `flavour` option set
+    -- in plugins/catppuccin.lua. This keeps flavour as the single source of truth.
+    colorscheme = "catppuccin",
     -- AstroUI allows you to easily modify highlight groups easily for any and all colorschemes
     highlights = {
       init = { -- this table overrides highlights in all themes

@@ -2,7 +2,9 @@
 return {
   "Isrothy/neominimap.nvim",
   version = "v3.x.x",
-  lazy = false, -- NOTE: NO NEED to Lazy load
+  -- Loads on the keys below or `:Neominimap`. Safe to lazy-load because `auto_enable` is
+  -- false, and `init` still runs at startup to set vim.g.neominimap regardless.
+  cmd = "Neominimap",
   -- Optional. You can also set your own keybindings
   keys = {
     -- Global Minimap Controls
@@ -35,7 +37,11 @@ return {
     { "<leader>ns", "<cmd>Neominimap ToggleFocus<cr>", desc = "Switch focus on minimap" },
   },
   init = function()
-    -- The following options are recommended when layout == "float"
+    -- Recommended by upstream when layout == "float": the minimap floats over the right
+    -- edge of the text window, and a large sidescrolloff is what keeps the cursor from
+    -- sliding underneath it. (`wrap = false` is the other half, already an AstroNvim
+    -- default.) Lower this if the horizontal scrolling feels too eager.
+    vim.opt.sidescrolloff = 36
 
     --- Put your configuration here
     ---@type Neominimap.UserConfig

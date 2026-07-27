@@ -12,6 +12,7 @@ return {
         "docker-compose-language-service",
         "dockerfile-language-server",
         "gci",
+        "gofumpt",
         "goimports",
         "gopls",
         "hadolint",

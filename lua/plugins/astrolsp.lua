@@ -1,136 +1,129 @@
--- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
-
 -- AstroLSP allows you to customize the features in AstroNvim's LSP configuration engine
 -- Configuration documentation can be found with `:h astrolsp`
--- NOTE: We highly recommend setting up the Lua Language Server (`:LspInstall lua_ls`)
---       as this provides autocomplete and documentation while editing
 
 ---@type LazySpec
 return {
-  "AstroNvim/astrolsp",
-  ---@type AstroLSPOpts
-  opts = {
-    -- Configuration table of features provided by AstroLSP
-    features = {
-      codelens = true, -- enable/disable codelens refresh on start
-      inlay_hints = false, -- enable/disable inlay hints on start
-      semantic_tokens = true, -- enable/disable semantic token highlighting
-    },
-    -- customize lsp formatting options
-    formatting = {
-      -- control auto formatting on save
-      format_on_save = {
-        enabled = true, -- enable or disable format on save globally
-        allow_filetypes = { -- enable format on save for specified filetypes only
-          -- "go",
-        },
-        ignore_filetypes = { -- disable format on save for specified filetypes
-          -- "python",
-        },
+  -- `:LspRestart` comes from nvim-lspconfig, but AstroNvim only registers
+  -- LspInfo/LspLog/LspStart as lazy-load triggers. Add LspRestart so the global
+  -- <Leader>lR mapping in astrocore.lua works before lspconfig has loaded
+  -- (e.g. from the dashboard) instead of failing with E492.
+  { "neovim/nvim-lspconfig", cmd = { "LspRestart" } },
+  {
+    "AstroNvim/astrolsp",
+    ---@type AstroLSPOpts
+    opts = {
+      -- Configuration table of features provided by AstroLSP
+      features = {
+        codelens = true, -- enable/disable codelens refresh on start
+        inlay_hints = false, -- enable/disable inlay hints on start
+        semantic_tokens = true, -- enable/disable semantic token highlighting
       },
-      disabled = { -- disable formatting capabilities for the listed language servers
-        -- disable lua_ls formatting capability if you want to use StyLua to format your lua code
-        -- "lua_ls",
-        "gopls",
-        "pyrefly", -- let conform own python formatting
-      },
-      timeout_ms = 3000, -- default format timeout
-      -- filter = function(client) -- fully override the default formatting function
-      --   return true
-      -- end
-    },
-    -- enable servers that you already have installed without mason
-    servers = {
-    },
-    -- customize language server configuration passed to `vim.lsp.config`
-    -- client specific configuration can also go in `lsp/` in your configuration root (see `:h lsp-config`)
-    config = {
-      yamlls = {
-        settings = {
-          yaml = {
-            schemas = {
-              kubernetes = "/*.yaml",
+      -- NOTE: no `formatting` block here on purpose. conform owns all formatting via
+      -- `astrocommunity.editing-support.conform-nvim`, which sets `formatting.disabled = true`.
+      -- Anything under `formatting` here would merge OVER that (lua/plugins/* merges after
+      -- community/) and re-enable AstroLSP's BufWritePre formatter, so every file would be
+      -- formatted twice. Set format timeouts in conform.lua instead.
+      -- customize language server configuration passed to `vim.lsp.config`
+      -- client specific configuration can also go in `lsp/` in your configuration root (see `:h lsp-config`)
+      config = {
+        yamlls = {
+          settings = {
+            yaml = {
+              schemas = {
+                kubernetes = "/*.yaml",
+              },
             },
           },
         },
-      },
-      gopls = {
-        settings = {
-          gopls = {
-            gofumpt = true,
-            staticcheck = true,
-            completeUnimported = true,
-            analyses = {
-              unusedparams = true,
-              unusedwrite = true,
-              nilness = true,
+        gopls = {
+          settings = {
+            gopls = {
+              gofumpt = true,
+              staticcheck = true,
+              completeUnimported = true,
+              analyses = {
+                unusedparams = true,
+                unusedwrite = true,
+                nilness = true,
+              },
             },
           },
         },
+        pyrefly = {
+          settings = {
+            pyrefly = {
+              preset = "default",
+            },
+          },
+        },
+        -- Ruff runs as a linter alongside pyrefly. Ruff 0.16 enables ~413 rules by default
+        -- (bugbear, pyupgrade, simplify, comprehensions, pylint, perflint, refurb, ...),
+        -- almost none of which a type checker reports -- so it earns its place. But
+        -- pyrefly's LSP *does* report a few of the same things, and those exact codes are
+        -- ignored here to avoid two diagnostics on one line:
+        --   F401 unused-import    -> pyrefly `unused-import`, reported reliably at module
+        --                            level regardless of annotations
+        --   F821 undefined-name   -> pyrefly `unknown-name` (and pyrefly resolves imports,
+        --                            so it is the more accurate of the two)
+        --   I001 unsorted-imports -> conform runs ruff_organize_imports on every save, so
+        --                            the diagnostic is always about to be auto-fixed
+        -- F841 (unused-variable) is deliberately NOT ignored even though pyrefly overlaps
+        -- it: pyrefly only reports it inside *annotated* functions, while ruff catches it
+        -- everywhere. An occasional duplicate beats silently missing it in untyped code.
+        -- If you spot another duplicated pair, add its code here rather than disabling ruff.
+        -- Add `configurationPreference = "filesystemFirst"` if a project's own ruff config
+        -- should take priority over these editor settings.
+        ruff = {
+          init_options = {
+            settings = {
+              lint = { ignore = { "F401", "F821", "I001" } },
+            },
+          },
+        },
+        -- ["*"] = { capabilities = {} }, -- modify default LSP client settings such as capabilities
       },
-      pyrefly = {
-        settings = {
-          pyrefly = {
-            preset = "default",
+      -- Configure buffer local auto commands to add when attaching a language server
+      autocmds = {
+        -- first key is the `augroup` to add the auto commands to (:h augroup)
+        lsp_codelens_refresh = {
+          -- Optional condition to create/delete auto command group
+          -- can either be a string of a client capability or a function of `fun(client, bufnr): boolean`
+          cond = "textDocument/codeLens",
+          {
+            event = { "InsertLeave", "BufEnter" },
+            desc = "Refresh codelens (buffer)",
+            callback = function(args)
+              if require("astrolsp").config.features.codelens then
+                vim.lsp.codelens.enable(true, { bufnr = args.buf })
+              end
+            end,
           },
         },
       },
-      -- ["*"] = { capabilities = {} }, -- modify default LSP client settings such as capabilities
-    },
-    -- customize how language servers are attached
-    handlers = {
-      -- a function with the key `*` modifies the default handler, functions takes the server name as the parameter
-      -- ["*"] = function(server) vim.lsp.enable(server) end
-
-      -- the key is the server that is being setup with `vim.lsp.config`
-      -- rust_analyzer = false, -- setting a handler to false will disable the set up of that language server
-      ruff = false, -- prevent mason-lspconfig from automatically starting the ruff LSP
-    },
-    -- Configure buffer local auto commands to add when attaching a language server
-    autocmds = {
-      -- first key is the `augroup` to add the auto commands to (:h augroup)
-      lsp_codelens_refresh = {
-        -- Optional condition to create/delete auto command group
-        -- can either be a string of a client capability or a function of `fun(client, bufnr): boolean`
-        -- condition will be resolved for each client on each execution and if it ever fails for all clients,
-        -- the auto commands will be deleted for that buffer
-        cond = "textDocument/codeLens",
-        -- cond = function(client, bufnr) return client.name == "lua_ls" end,
-        -- list of auto commands to set
-        {
-          -- events to trigger
-          event = { "InsertLeave", "BufEnter" },
-          -- the rest of the autocmd options (:h nvim_create_autocmd)
-          desc = "Refresh codelens (buffer)",
-          callback = function(args)
-            if require("astrolsp").config.features.codelens then vim.lsp.codelens.enable(true, { bufnr = args.buf }) end
-          end,
+      -- mappings to be set up on attaching of a language server
+      mappings = {
+        n = {
+          -- a `cond` key can provided as the string of a server capability to be required to attach, or a function with `client` and `bufnr` parameters from the `on_attach` that returns a boolean
+          gD = {
+            function() vim.lsp.buf.declaration() end,
+            desc = "Declaration of current symbol",
+            cond = "textDocument/declaration",
+          },
+          ["<Leader>uY"] = {
+            function() require("astrolsp.toggles").buffer_semantic_tokens() end,
+            desc = "Toggle LSP semantic highlight (buffer)",
+            cond = function(client)
+              return client:supports_method "textDocument/semanticTokens/full" and vim.lsp.semantic_tokens ~= nil
+            end,
+          },
+          -- Free up <Leader>lR (AstroLSP's "Search references") for the LSP restart mapping
+          -- in astrocore.lua. `grr` is the Neovim 0.11+ default for references.
+          -- NOTE: the restart cannot live here -- a table would deep-merge and retain
+          -- AstroNvim's `cond = "textDocument/references"`, so the key would only exist
+          -- while a references-capable client is attached, i.e. never after a crash.
+          ["<Leader>lR"] = false,
         },
       },
     },
-    -- mappings to be set up on attaching of a language server
-    mappings = {
-      n = {
-        -- a `cond` key can provided as the string of a server capability to be required to attach, or a function with `client` and `bufnr` parameters from the `on_attach` that returns a boolean
-        gD = {
-          function() vim.lsp.buf.declaration() end,
-          desc = "Declaration of current symbol",
-          cond = "textDocument/declaration",
-        },
-        ["<Leader>uY"] = {
-          function() require("astrolsp.toggles").buffer_semantic_tokens() end,
-          desc = "Toggle LSP semantic highlight (buffer)",
-          cond = function(client)
-            return client:supports_method "textDocument/semanticTokens/full" and vim.lsp.semantic_tokens ~= nil
-          end,
-        },
-      },
-    },
-    -- A custom `on_attach` function to be run after the default `on_attach` function
-    -- takes two parameters `client` and `bufnr`  (`:h lsp-attach`)
-    on_attach = function(client, bufnr)
-      -- this would disable semanticTokensProvider for all clients
-      -- client.server_capabilities.semanticTokensProvider = nil
-    end,
   },
 }

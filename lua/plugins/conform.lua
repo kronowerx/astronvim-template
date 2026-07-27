@@ -3,10 +3,13 @@ return {
   "stevearc/conform.nvim",
   opts = function(_, opts)
     opts.formatters_by_ft = opts.formatters_by_ft or {}
-    opts.format_on_save = {
-      timeout_ms = 500,
-      lsp_format = "fallback",
-    }
+
+    -- Do NOT set `opts.format_on_save` here: the astrocommunity conform module installs a
+    -- function there gated on vim.b/vim.g.autoformat, and a table would replace it,
+    -- breaking <Leader>uf/<Leader>uF. Raise the timeout via default_format_opts instead --
+    -- conform fills only nil keys, so this reaches the save path (default is 1000ms).
+    -- This is a synchronous budget blocking `:w`, so keep it modest.
+    opts.default_format_opts = vim.tbl_extend("force", opts.default_format_opts or {}, { timeout_ms = 1500 })
 
     opts.formatters_by_ft.go = {
       "goimports",
@@ -27,11 +30,9 @@ return {
       if root then
         local file = io.open(root .. "/go.mod", "r")
         if file then
-          local first_line = file:read("*l")
+          local first_line = file:read "*l"
           file:close()
-          if first_line then
-            return first_line:match("^module%s+(.+)$")
-          end
+          if first_line then return first_line:match "^module%s+(.+)$" end
         end
       end
       return nil
@@ -40,9 +41,7 @@ return {
     opts.formatters.goimports = {
       prepend_args = function(self, ctx)
         local mod = get_go_module(ctx)
-        if mod then
-          return { "-local", mod }
-        end
+        if mod then return { "-local", mod } end
         return {}
       end,
     }
