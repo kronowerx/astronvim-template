@@ -16,6 +16,8 @@ return {
       "gofumpt",
       "gci",
     }
+    -- Duplicates `astrocommunity.pack.lua`, which sets exactly this. Kept explicit so the
+    -- lua formatter does not silently depend on that community import staying in place.
     opts.formatters_by_ft.lua = { "stylua" }
     opts.formatters_by_ft.python = { "ruff_organize_imports", "ruff_format" }
     opts.formatters_by_ft.json = { "prettierd" }
@@ -38,18 +40,18 @@ return {
       return nil
     end
 
-    opts.formatters.goimports = {
-      prepend_args = function(self, ctx)
-        local mod = get_go_module(ctx)
-        if mod then return { "-local", mod } end
-        return {}
-      end,
-    }
-
+    -- NOTE: `goimports` intentionally gets no `-local` override. gci runs after it and its
+    -- `prefix(<mod>)` section produces the identical std|third-party|local grouping, so the
+    -- flag was overwritten every time -- verified by diffing the full chain with and without
+    -- it. goimports still earns its slot in `formatters_by_ft.go`: it adds and removes
+    -- imports, which gci never does (gci only sorts).
+    --
+    -- This override replaces conform's built-in gci args wholesale (a function `args` is not
+    -- merged with the built-in table), so `--skip-generated` and `--skip-vendor` have to be
+    -- repeated here or they are lost.
     opts.formatters.gci = {
-      command = "gci",
-      args = function(self, ctx)
-        local args = { "write", "--skip-generated", "-s", "standard", "-s", "default" }
+      args = function(_, ctx)
+        local args = { "write", "--skip-generated", "--skip-vendor", "-s", "standard", "-s", "default" }
         local mod = get_go_module(ctx)
         if mod then
           table.insert(args, "-s")

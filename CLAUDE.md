@@ -10,7 +10,7 @@ Currently running against Neovim 0.12.4.
 
 ## Research before configuring
 
-Do not configure a plugin from memory. Plugin APIs and AstroNvim's own layout change between versions, and this config tracks AstroNvim `^6` unpinned — recalled option names are frequently stale.
+Do not configure a plugin from memory. Plugin APIs and AstroNvim's own layout change between versions, and this config tracks AstroNvim `^6` — recalled option names are frequently stale.
 
 Before adding or changing any plugin spec:
 
@@ -42,6 +42,11 @@ timeout 60 nvim --headless "+lua vim.defer_fn(function() \
 timeout 60 nvim --headless "+Lazy! sync" +qa   # install/update plugins
 ```
 
+Note for anything LSP-related: on Neovim 0.12 nvim-lspconfig creates **no `Lsp*` user commands**
+(`plugin/lspconfig.lua` early-returns when the builtin `:lsp` exists). Use `:lsp restart`,
+`:lsp info`, etc. — `:LspRestart` and friends do not exist, and a `cmd = { "Lsp*" }` lazy trigger
+will never fire.
+
 The `vim.defer_fn` wrapper is required — plugins load lazily, so state read at startup is not yet final.
 
 Lint and format the config itself with the Mason-installed binaries (`~/.local/share/nvim/mason/bin/` — not on `PATH`):
@@ -72,7 +77,7 @@ Two specific traps:
 
 ### conform owns all formatting
 
-`community.lua` imports `astrocommunity.editing-support.conform-nvim`, which sets `astrolsp.formatting.disabled = true`, turns off none-ls formatting sources, and supplies `:Format`, `<Leader>lf`, `<Leader>uf`, `<Leader>uF`.
+`community.lua` imports `astrocommunity.editing-support.conform-nvim`, which sets `astrolsp.formatting.disabled = true`, sets mason-null-ls's `methods.formatting = false`, and supplies `:Format`, `<Leader>lf`, `<Leader>lc`, `<Leader>uf`, `<Leader>uF`.
 
 Consequences:
 
@@ -80,7 +85,12 @@ Consequences:
 - **Never set `opts.format_on_save` in `plugins/conform.lua`.** The community module installs a *function* there, gated on `vim.b/vim.g.autoformat`; a table replaces it and breaks the autoformat toggles. Raise the save-path budget via `default_format_opts.timeout_ms` instead (currently 1500ms, synchronous, blocks `:w`).
 - Visual-mode `<Leader>lf` is defined in `astrocore.lua` because the community module only maps normal mode and AstroLSP's visual mapping is suppressed.
 
-Go formatting is dynamic: `conform.lua` reads `module` out of the nearest `go.mod` and passes it to `goimports -local` and `gci`'s prefix section, so import grouping follows the project rather than a hardcoded org.
+Go formatting is dynamic: `conform.lua` reads `module` out of the nearest `go.mod` and passes it to
+`gci`'s prefix section, so import grouping follows the project rather than a hardcoded org. The chain is
+`goimports` → `gofumpt` → `gci`; only gci decides the final grouping, so do **not** re-add
+`goimports -local` (its output is overwritten — verified by diffing the chain with and without it).
+gci's `args` is a function, which replaces conform's built-in arg table wholesale — `--skip-generated`
+and `--skip-vendor` must be repeated there or vendored code gets rewritten.
 
 ### Python: pyrefly + ruff, deduplicated by hand
 
@@ -88,11 +98,15 @@ Both attach. Ruff's overlapping codes are ignored in `astrolsp.lua` (`F401`, `F8
 
 ### Colorscheme flavour is pinned in three places
 
-Catppuccin has two independent flavour-resolution paths that must agree. `astroui.lua` sets the **suffixed** name `catppuccin-macchiato` (whose colors file calls `load "macchiato"` explicitly); `plugins/catppuccin.lua` sets both `flavour` and `background.dark` so the bare-`catppuccin` path can't fall back to mocha. Do not give catppuccin `lazy = false` or a `priority` — astroui applies the colorscheme at priority 10000, so a start-loaded catppuccin would run `:colorscheme` before its own `setup()` and recompile every flavour twice per launch.
+Catppuccin has two independent flavour-resolution paths that must agree. `astroui.lua` sets the **suffixed** name `catppuccin-macchiato` (whose colors file calls `load "macchiato"` explicitly); `plugins/catppuccin.lua` sets both `flavour` and `background.dark` so the bare-`catppuccin` path can't fall back to mocha. Do not give catppuccin `lazy = false` or a `priority` — the colorscheme is applied at the end of **astrocore's** setup (`astrocore/init.lua` calls `astroui.set_colorscheme()`), and astrocore is the `lazy = false, priority = 10000` start plugin; astroui itself is `lazy = true` upstream. So a start-loaded catppuccin would run `:colorscheme` before its own `setup()` and recompile every flavour twice per launch.
 
 ### Inert template stubs
 
 `lua/plugins/user.lua`, `lua/plugins/none-ls.lua`, and `lua/plugins/treesitter.lua` all begin with `if true then return {} end`. **Editing them has no effect** until that line is removed. Treesitter config in particular is a red herring — parsers are configured through AstroCore's `treesitter` table, not through the nvim-treesitter spec.
+
+The none-ls stub is the misleading one: only the *spec* is inert. none-ls itself still loads from AstroNvim's base config, and `mason-null-ls` auto-registers a diagnostics source for every installed Mason package that maps to one — currently `hadolint` and `selene`, both live. The community conform module only turns off the *formatting* method, so diagnostics sources are unaffected. There is a working linter runner here; it just isn't configured from this file.
+
+`treesitter.ensure_installed` in `astrocore.lua` must stay **exhaustive**. `astrocommunity.pack.helm` declares its parser with a function `opts` calling `extend_tbl` (`tbl_deep_extend "force"`), which bypasses lazy's `opts_extend` and list-replaces the key — left alone it collapses the whole list to `{ "helm" }`.
 
 ### Network environment
 
@@ -101,6 +115,7 @@ Plugin fetches go through a corporate proxy, which is why `lazy_setup.lua` caps 
 ## Conventions
 
 - Every non-obvious override in this repo carries a comment explaining *why* — usually which layer it is fighting and what breaks otherwise. Preserve these when editing, and add one when introducing a new override that depends on merge order.
-- Keep `plugins/mason.lua`'s `ensure_installed` in sync when adding a formatter to `conform.lua` or a server to `astrolsp.lua`; nothing enforces this automatically.
-- `lazy-lock.json` is **deliberately gitignored**. Plugin versions are intentionally not pinned — a fresh clone resolves to whatever is current, and that is the desired behaviour. Do not propose committing the lockfile.
+- Keep `plugins/mason.lua`'s `ensure_installed` in sync when adding a formatter to `conform.lua` or a server to `astrolsp.lua`; nothing enforces this automatically. Note the list *concatenates* with the community packs (`opts_extend`), and several names are duplicated on purpose: `pack.lua` already ensure-installs `lua-language-server`/`stylua`/`selene` (and sets `formatters_by_ft.lua = { "stylua" }`), `pack.helm` already ensure-installs `helm-ls`. They are repeated locally so the toolchain doesn't silently depend on those imports.
+- **A Mason package name can silently become a running LSP server.** AstroNvim walks `registry.get_installed_package_names()` and enables any package that maps to an lspconfig server (`astronvim/plugins/configs/mason-lspconfig.lua`), so e.g. the `stylua` formatter would otherwise attach as `stylua --lsp` on every Lua buffer. Suppress with `handlers = { <server> = false }` in `astrolsp.lua`. Deleting the name from `ensure_installed` does **not** help — the package stays installed and keeps getting enabled; use `:MasonUninstall` for that.
+- `lazy-lock.json` is **deliberately gitignored**; do not propose committing it. But note this does *not* mean versions float: because `lazy_setup.lua` sets `version = "^6"`, AstroNvim resolves `pin_plugins = true` and imports `astronvim.lazy_snapshot`, which pins most of the plugin set. A fresh clone reproduces AstroNvim's snapshot, not whatever is newest.
 - Mappings, vim options, and autocommands belong in `plugins/astrocore.lua`, not `polish.lua`. `polish.lua` is reserved for the narrow set of things AstroCore's table-driven config cannot express — currently only unsetting an env var, since a `nil` value is unrepresentable in a Lua table.

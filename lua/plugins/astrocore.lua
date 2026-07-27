@@ -38,16 +38,47 @@ return {
         -- would clobber jumplist-forward. Mirrors the built-in ]b/[b.
         ["<S-l>"] = { function() require("astrocore.buffer").nav(vim.v.count1) end, desc = "Next buffer" },
         ["<S-h>"] = { function() require("astrocore.buffer").nav(-vim.v.count1) end, desc = "Previous buffer" },
-        -- AstroLSP's buffer-local <Leader>lR ("Search references") is disabled in
-        -- astrolsp.lua -- `grr` is the Neovim 0.11+ default for references. Defined
-        -- globally (not in astrolsp) so it still works when a server has crashed and
-        -- nothing is attached, which is exactly when you need it.
-        ["<Leader>lR"] = { function() vim.cmd.LspRestart { bang = true } end, desc = "Restart LSP" },
       },
       v = {
         -- With `formatting.disabled = true`, AstroLSP's visual <Leader>lf is suppressed and
         -- the conform module only supplies normal mode, so range formatting needs a key here.
         ["<Leader>lf"] = { ":<C-U>'<,'>Format<CR>", desc = "Format selection" },
+      },
+    },
+    -- Treesitter parsers are configured here, not in the nvim-treesitter spec (which is
+    -- only a download utility on the `main` branch).
+    --
+    -- NOTE: this list must be exhaustive. Upstream `astrocommunity.pack.helm` declares its
+    -- parser with a *function* `opts` calling `extend_tbl` (`tbl_deep_extend "force"`), which
+    -- bypasses lazy's `opts_extend` and list-REPLACES this key -- collapsing AstroNvim's nine
+    -- defaults and pack.lua's { "lua", "luap" } down to just { "helm" }. Re-declaring the full
+    -- set here (this fragment merges last) is correct whether the merge appends or replaces;
+    -- relying on append semantics is not. `auto_install` stays on for anything missed.
+    treesitter = {
+      ensure_installed = {
+        "bash",
+        "c",
+        "dockerfile",
+        "gitignore",
+        "go",
+        "gomod",
+        "gosum",
+        "gotmpl",
+        "helm",
+        "json",
+        "jsonc",
+        "lua",
+        "luap",
+        "make",
+        "markdown",
+        "markdown_inline",
+        "python",
+        "query",
+        "sql",
+        "toml",
+        "vim",
+        "vimdoc",
+        "yaml",
       },
     },
     autocmds = {

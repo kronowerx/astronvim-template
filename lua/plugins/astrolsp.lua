@@ -3,21 +3,27 @@
 
 ---@type LazySpec
 return {
-  -- `:LspRestart` comes from nvim-lspconfig, but AstroNvim only registers
-  -- LspInfo/LspLog/LspStart as lazy-load triggers. Add LspRestart so the global
-  -- <Leader>lR mapping in astrocore.lua works before lspconfig has loaded
-  -- (e.g. from the dashboard) instead of failing with E492.
-  { "neovim/nvim-lspconfig", cmd = { "LspRestart" } },
   {
     "AstroNvim/astrolsp",
     ---@type AstroLSPOpts
     opts = {
       -- Configuration table of features provided by AstroLSP
       features = {
-        codelens = true, -- enable/disable codelens refresh on start
+        -- NOTE: no `codelens` key. AstroNvim already computes the correct default
+        -- (`not vim.version.range("0.12.0-0.12.1"):has(...)`, i.e. true on 0.12.4);
+        -- setting it here only restated that.
         inlay_hints = false, -- enable/disable inlay hints on start
         semantic_tokens = true, -- enable/disable semantic token highlighting
       },
+      -- AstroNvim enables an LSP server for every *installed* Mason package that maps to an
+      -- lspconfig server name (see `astronvim/plugins/configs/mason-lspconfig.lua`, which
+      -- walks `registry.get_installed_package_names()`). nvim-lspconfig ships a `stylua`
+      -- server def (`stylua --lsp`), so the stylua formatter in mason.lua was also attaching
+      -- to every Lua buffer as a second documentFormatting provider that conform already
+      -- covers. `false` skips setup entirely (`:h astrolsp` -> handlers).
+      -- Removing a name from `ensure_installed` will NOT undo this -- the package stays on
+      -- disk and keeps getting enabled. Use this table, or `:MasonUninstall`.
+      handlers = { stylua = false },
       -- NOTE: no `formatting` block here on purpose. conform owns all formatting via
       -- `astrocommunity.editing-support.conform-nvim`, which sets `formatting.disabled = true`.
       -- Anything under `formatting` here would merge OVER that (lua/plugins/* merges after
@@ -29,33 +35,46 @@ return {
         yamlls = {
           settings = {
             yaml = {
-              schemas = {
-                kubernetes = "/*.yaml",
-              },
+              -- NOTE: keep these patterns directory-scoped. yamlls strips a leading `/` and
+              -- then unconditionally prepends `**/`, so the common `"/*.yaml"` idiom expands
+              -- to `**/*.yaml` -- every yaml file at any depth. That is not merely noisy:
+              -- `yaml.schemas` is priority 5 against SchemaStore's 7, so it *displaces* the
+              -- correctly auto-detected schema, and the `kubernetes` keyword resolves to the
+              -- strict all-kinds schema (`additionalProperties: false`). A GitHub Actions
+              -- workflow named `.yaml` then reports "Property jobs is not allowed" while the
+              -- same file named `.yml` is clean.
+              schemas = { kubernetes = { "k8s/**/*.{yaml,yml}", "manifests/**/*.{yaml,yml}" } },
             },
           },
         },
+        -- Only `gofumpt` is set: it is the one gopls setting here that still changes
+        -- behaviour, and even then only for gopls' own generated edits (code actions,
+        -- refactorings) -- conform owns buffer formatting, so gopls never formats on `:w`.
+        -- Deliberately NOT set:
+        --   staticcheck        -- tri-state. `true` enables *every* analyzer including ones
+        --                         staticcheck ships off by default; leaving it unset selects
+        --                         the maintainer-curated subset, which is what we want.
+        --   completeUnimported -- dropped from the public settings surface in gopls 0.7.0.
+        --                         Now an internal option already defaulting to true; the key
+        --                         still parses, so a stale setting fails silently.
+        --   analyses.{unusedparams,unusedwrite,nilness} -- all default true since gopls
+        --                         0.15/0.16.
         gopls = {
           settings = {
             gopls = {
               gofumpt = true,
-              staticcheck = true,
-              completeUnimported = true,
-              analyses = {
-                unusedparams = true,
-                unusedwrite = true,
-                nilness = true,
-              },
             },
           },
         },
-        pyrefly = {
-          settings = {
-            pyrefly = {
-              preset = "default",
-            },
-          },
-        },
+        -- NOTE: no `pyrefly` entry. The obvious `settings = { pyrefly = { ... } }` shape is
+        -- inert twice over: pyrefly requests the `python` configuration section and never
+        -- `pyrefly`, so the table is never even transmitted; and `preset` is a
+        -- pyrefly.toml/CLI key with no LSP-settings equivalent (the server's real keys are
+        -- typeCheckingMode, displayTypeErrors, disableLanguageServices, disableTypeErrors,
+        -- extraPaths -- unknown fields are dropped without a warning). If a type-checking
+        -- mode is ever wanted, the working shape is:
+        --   settings = { python = { pyrefly = { typeCheckingMode = "..." } } }
+        -- and note it applies only to files not already covered by a pyrefly.toml.
         -- Ruff runs as a linter alongside pyrefly. Ruff 0.16 enables ~413 rules by default
         -- (bugbear, pyupgrade, simplify, comprehensions, pylint, perflint, refurb, ...),
         -- almost none of which a type checker reports -- so it earns its place. But
@@ -82,24 +101,13 @@ return {
         },
         -- ["*"] = { capabilities = {} }, -- modify default LSP client settings such as capabilities
       },
-      -- Configure buffer local auto commands to add when attaching a language server
-      autocmds = {
-        -- first key is the `augroup` to add the auto commands to (:h augroup)
-        lsp_codelens_refresh = {
-          -- Optional condition to create/delete auto command group
-          -- can either be a string of a client capability or a function of `fun(client, bufnr): boolean`
-          cond = "textDocument/codeLens",
-          {
-            event = { "InsertLeave", "BufEnter" },
-            desc = "Refresh codelens (buffer)",
-            callback = function(args)
-              if require("astrolsp").config.features.codelens then
-                vim.lsp.codelens.enable(true, { bufnr = args.buf })
-              end
-            end,
-          },
-        },
-      },
+      -- NOTE: no `lsp_codelens_refresh` autocmd group here. AstroNvim deliberately disables
+      -- it on Neovim 0.12 (`_astrolsp_autocmds.lua`: `not vim.lsp.codelens.enable and {...}
+      -- or false`) because `vim.lsp.codelens.enable` is no longer a refresh -- it is a
+      -- state marker guarded by `if enable ~= is_enabled(...)`, and refreshing is now the
+      -- decoration provider's job. Re-adding the group merged over that `false` and forced
+      -- codelens back on at every BufEnter/InsertLeave, silently defeating AstroNvim's own
+      -- <Leader>uL codelens toggle.
       -- mappings to be set up on attaching of a language server
       mappings = {
         n = {
@@ -116,12 +124,6 @@ return {
               return client:supports_method "textDocument/semanticTokens/full" and vim.lsp.semantic_tokens ~= nil
             end,
           },
-          -- Free up <Leader>lR (AstroLSP's "Search references") for the LSP restart mapping
-          -- in astrocore.lua. `grr` is the Neovim 0.11+ default for references.
-          -- NOTE: the restart cannot live here -- a table would deep-merge and retain
-          -- AstroNvim's `cond = "textDocument/references"`, so the key would only exist
-          -- while a references-capable client is attached, i.e. never after a crash.
-          ["<Leader>lR"] = false,
         },
       },
     },
