@@ -11,15 +11,26 @@ return {
     -- This is a synchronous budget blocking `:w`, so keep it modest.
     opts.default_format_opts = vim.tbl_extend("force", opts.default_format_opts or {}, { timeout_ms = 1500 })
 
+    -- Only filetypes this config genuinely disagrees with the packs on are listed here.
+    -- lua (stylua) and sh/zsh (shfmt + shellcheck) are left entirely to
+    -- `astrocommunity.pack.{lua,bash}`.
+
+    -- Overrides `astrocommunity.pack.go`, which sets `{ "goimports", lsp_format = "last" }`.
+    -- Assigning the key replaces that wholesale, which is the intent twice over: gci below
+    -- does project-aware import grouping that goimports alone cannot, and dropping
+    -- `lsp_format = "last"` keeps gopls out of the save path (conform owns formatting).
     opts.formatters_by_ft.go = {
       "goimports",
       "gofumpt",
       "gci",
     }
-    -- Duplicates `astrocommunity.pack.lua`, which sets exactly this. Kept explicit so the
-    -- lua formatter does not silently depend on that community import staying in place.
-    opts.formatters_by_ft.lua = { "stylua" }
+    -- Overrides `astrocommunity.pack.python.ruff`, which sets
+    -- `{ "ruff_fix", "ruff_organize_imports", "ruff_format" }`. `ruff_fix` is omitted on
+    -- purpose: it applies ruff's lint autofixes on every `:w`, which is a code change rather
+    -- than a formatting change. Delete this line to take the pack's chain instead.
     opts.formatters_by_ft.python = { "ruff_organize_imports", "ruff_format" }
+    -- No pack supplies a formatter for these; jsonls/marksman/taplo are LSP-only here
+    -- (and AstroLSP formatting is disabled, so their format capability never runs).
     opts.formatters_by_ft.json = { "prettierd" }
     opts.formatters_by_ft.jsonc = { "prettierd" }
     opts.formatters_by_ft.markdown = { "prettierd" }

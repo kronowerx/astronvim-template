@@ -47,25 +47,19 @@ return {
             },
           },
         },
-        -- Only `gofumpt` is set: it is the one gopls setting here that still changes
-        -- behaviour, and even then only for gopls' own generated edits (code actions,
-        -- refactorings) -- conform owns buffer formatting, so gopls never formats on `:w`.
-        -- Deliberately NOT set:
-        --   staticcheck        -- tri-state. `true` enables *every* analyzer including ones
-        --                         staticcheck ships off by default; leaving it unset selects
-        --                         the maintainer-curated subset, which is what we want.
-        --   completeUnimported -- dropped from the public settings surface in gopls 0.7.0.
-        --                         Now an internal option already defaulting to true; the key
-        --                         still parses, so a stale setting fails silently.
-        --   analyses.{unusedparams,unusedwrite,nilness} -- all default true since gopls
-        --                         0.15/0.16.
-        gopls = {
-          settings = {
-            gopls = {
-              gofumpt = true,
-            },
-          },
-        },
+        -- NOTE: no `gopls` entry. `astrocommunity.pack.go` owns the gopls settings now,
+        -- including `gofumpt = true` (which is the one that matters here -- it applies to
+        -- gopls' own generated edits from code actions and refactorings; conform owns buffer
+        -- formatting, so gopls never formats on `:w`). Two of the pack's settings are worth
+        -- knowing about because they are opinionated rather than default:
+        --   buildFlags = { "-tags", "integration" } -- gopls analyzes files behind the
+        --                         `integration` build tag in every project, not just ones
+        --                         that use it.
+        --   staticcheck = true -- tri-state; `true` enables *every* analyzer, including the
+        --                         ones staticcheck ships off by default. Unset would select
+        --                         the maintainer-curated subset.
+        -- To go back to a minimal gopls, re-add a `gopls` block here -- it merges over the
+        -- pack -- and set those keys to `vim.NIL` to delete them rather than to `false`.
         -- NOTE: no `pyrefly` entry. The obvious `settings = { pyrefly = { ... } }` shape is
         -- inert twice over: pyrefly requests the `python` configuration section and never
         -- `pyrefly`, so the table is never even transmitted; and `preset` is a

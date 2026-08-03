@@ -9,34 +9,28 @@ return {
     opts = {
       -- Make sure to use the names found in `:Mason`.
       --
-      -- Two things to know before editing this list:
-      --   * AstroNvim declares `opts_extend = { "ensure_installed" }`, so these CONCATENATE
-      --     with the community packs rather than replacing them. `lua-language-server`,
-      --     `stylua` and `selene` also come from `astrocommunity.pack.lua`, and `helm-ls`
-      --     from `astrocommunity.pack.helm`; they are repeated here on purpose so the
-      --     toolchain does not silently depend on those imports. Duplicates are harmless.
-      --   * A package here that maps to an lspconfig server name is auto-started as a
-      --     language server (see the `handlers` note in astrolsp.lua). Deleting a name from
-      --     this list does not stop that -- the package stays installed. Use
-      --     `:MasonUninstall`, or disable it via astrolsp `handlers`.
+      -- This list is now only the GAPS. Every language toolchain comes from the
+      -- `astrocommunity.pack.*` imports in community.lua, which register their own servers,
+      -- formatters and linters through this same plugin -- AstroNvim declares
+      -- `opts_extend = { "ensure_installed" }`, so the fragments CONCATENATE. Restating a
+      -- pack's package here would be harmless but misleading about who owns it; add a name
+      -- only when no imported pack installs it.
+      --
+      -- Also note: a package here that maps to an lspconfig server name is auto-started as a
+      -- language server (see the `handlers` note in astrolsp.lua). Deleting a name from this
+      -- list does not stop that -- the package stays installed. Use `:MasonUninstall`, or
+      -- disable it via astrolsp `handlers`.
       ensure_installed = {
-        "docker-compose-language-service",
-        "dockerfile-language-server",
+        -- Go: the pack installs gopls + goimports, but the rest of conform.lua's Go chain
+        -- (goimports -> gofumpt -> gci) is this config's own.
         "gci",
         "gofumpt",
-        "goimports",
-        "gopls",
-        "hadolint",
-        "helm-ls",
-        "lua-language-server",
+        -- conform.lua formats json/jsonc/markdown with prettierd; no pack supplies it.
         "prettierd",
-        "pyrefly",
-        "ruff",
-        "selene",
-        "stylua",
-        "taplo",
+        -- `astrocommunity.pack.rust` installs only codelldb and expects rust-analyzer on
+        -- PATH via rustup. Pin it to Mason so a machine without rustup still works.
+        "rust-analyzer",
         "tree-sitter-cli",
-        "yaml-language-server",
       },
     },
   },

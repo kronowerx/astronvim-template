@@ -48,12 +48,14 @@ return {
     -- Treesitter parsers are configured here, not in the nvim-treesitter spec (which is
     -- only a download utility on the `main` branch).
     --
-    -- NOTE: this list must be exhaustive. Upstream `astrocommunity.pack.helm` declares its
-    -- parser with a *function* `opts` calling `extend_tbl` (`tbl_deep_extend "force"`), which
-    -- bypasses lazy's `opts_extend` and list-REPLACES this key -- collapsing AstroNvim's nine
-    -- defaults and pack.lua's { "lua", "luap" } down to just { "helm" }. Re-declaring the full
-    -- set here (this fragment merges last) is correct whether the merge appends or replaces;
-    -- relying on append semantics is not. `auto_install` stays on for anything missed.
+    -- NOTE: this list must be exhaustive -- it is a union backstop, not an increment.
+    -- Upstream `astrocommunity.pack.helm` declares its parser with a *function* `opts` calling
+    -- `extend_tbl` (`tbl_deep_extend "force"`), which bypasses astrocore's
+    -- `opts_extend = { "treesitter.ensure_installed" }` and list-REPLACES this key --
+    -- collapsing everything merged before it down to just { "helm" }. community.lua imports
+    -- helm first to limit that blast radius, but re-declaring the full set here (this fragment
+    -- merges last) is correct whether the merge appends or replaces; relying on append
+    -- semantics is not. `auto_install` stays on for anything missed.
     treesitter = {
       ensure_installed = {
         "bash",
@@ -64,6 +66,7 @@ return {
         "gomod",
         "gosum",
         "gotmpl",
+        "gowork",
         "helm",
         "json",
         "jsonc",
@@ -74,6 +77,7 @@ return {
         "markdown_inline",
         "python",
         "query",
+        "rust",
         "sql",
         "toml",
         "vim",

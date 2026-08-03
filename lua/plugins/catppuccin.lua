@@ -1,16 +1,26 @@
 -- Catppuccin theme. The base spec comes from `astrocommunity.colorscheme.catppuccin`,
 -- which sets `lazy = true` and `auto_integrations = true`.
 --
--- Flavour is pinned in three places on purpose, because catppuccin has two independent
--- resolution paths and they must not disagree:
+-- Flavour is pinned in three places on purpose, because the name `catppuccin` has three
+-- independent claimants on the runtimepath and they must not disagree:
 --
 --   * astroui sets `colorscheme = "catppuccin-macchiato"`, whose colors file calls
---     `load "macchiato"` with an explicit argument. This is the authoritative path.
+--     `load "macchiato"` with an explicit argument. This is the authoritative path, and
+--     the only one of the three that is unambiguous -- no other runtime file claims the
+--     suffixed name.
 --   * `load()` with NO argument (the bare `catppuccin` name) instead resolves
 --     `options.flavour or options.background[vim.o.background]` at load time. If setup()
 --     has not run yet, options are defaults and `background.dark` is "mocha" -- so the
 --     bare name silently renders mocha. Setting both `flavour` and `background` here means
 --     even that path lands on macchiato.
+--   * Neovim 0.12 ships its OWN `$VIMRUNTIME/colors/catppuccin.vim`, so the bare name is
+--     now genuinely ambiguous: the plugin's `colors/catppuccin.lua` only wins on rtp order.
+--     This is why the AstroNvim v6 migration guide tells users to rename `catppuccin` ->
+--     `catppuccin-nvim`. Do NOT follow that advice here. The plugin's
+--     `colors/catppuccin-nvim.vim` is a one-liner calling `require("catppuccin").load()`
+--     with no argument -- i.e. it disambiguates the plugin-vs-builtin collision by opting
+--     into the non-deterministic flavour path above. The suffixed name already sidesteps
+--     both problems.
 --
 -- Do NOT set `lazy = false` or a `priority`: astroui applies the colorscheme from
 -- astrocore's setup at priority 10000, so a start-loaded catppuccin at priority 1000 would
