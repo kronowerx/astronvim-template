@@ -11,12 +11,12 @@ return {
   ---@type AstroUIOpts
   opts = {
     -- change colorscheme
-    -- NOTE: use the SUFFIXED name. `colors/catppuccin-macchiato.lua` runs
-    -- `require("catppuccin").load "macchiato"` -- an explicit argument, so the flavour is
+    -- NOTE: use the SUFFIXED name. `colors/catppuccin-mocha.lua` runs
+    -- `require("catppuccin").load "mocha"` -- an explicit argument, so the flavour is
     -- deterministic. The bare `catppuccin` name calls `load()` with no argument and
-    -- resolves the flavour from `options` at load time, which silently gave mocha whenever
-    -- setup() had not run yet (options.background.dark defaults to "mocha").
-    colorscheme = "catppuccin-macchiato",
+    -- resolves the flavour from `options` at load time, i.e. whatever setup() happened to
+    -- have applied by then (defaults if it has not run at all).
+    colorscheme = "catppuccin-mocha",
     -- AstroUI allows you to easily modify highlight groups easily for any and all colorschemes
     highlights = {
       init = { -- this table overrides highlights in all themes

@@ -22,7 +22,7 @@ require("lazy").setup({
   git = {
     timeout = 300, -- don't kill slow-but-progressing fetches through the proxy (was 120)
   },
-  install = { colorscheme = { "catppuccin-macchiato", "astrotheme", "habamax" } },
+  install = { colorscheme = { "catppuccin-mocha", "astrotheme", "habamax" } },
   ui = { backdrop = 100 },
   performance = {
     rtp = {
