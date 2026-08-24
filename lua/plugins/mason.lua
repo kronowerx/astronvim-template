@@ -21,9 +21,8 @@ return {
       -- list does not stop that -- the package stays installed. Use `:MasonUninstall`, or
       -- disable it via astrolsp `handlers`.
       ensure_installed = {
-        -- Go: the pack installs gopls + goimports, but the rest of conform.lua's Go chain
-        -- (goimports -> gofumpt -> gci) is this config's own.
-        "gci",
+        -- Go: the pack installs gopls + goimports; gofumpt is the one link in
+        -- conform.lua's Go chain (goimports -> gofumpt) that no pack supplies.
         "gofumpt",
         -- conform.lua formats json/jsonc/markdown with prettierd; no pack supplies it.
         "prettierd",

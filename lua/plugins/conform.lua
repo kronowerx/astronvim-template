@@ -16,13 +16,11 @@ return {
     -- `astrocommunity.pack.{lua,bash}`.
 
     -- Overrides `astrocommunity.pack.go`, which sets `{ "goimports", lsp_format = "last" }`.
-    -- Assigning the key replaces that wholesale, which is the intent twice over: gci below
-    -- does project-aware import grouping that goimports alone cannot, and dropping
+    -- Assigning the key replaces that wholesale, which is the intent: dropping
     -- `lsp_format = "last"` keeps gopls out of the save path (conform owns formatting).
     opts.formatters_by_ft.go = {
       "goimports",
       "gofumpt",
-      "gci",
     }
     -- Overrides `astrocommunity.pack.python.ruff`, which sets
     -- `{ "ruff_fix", "ruff_organize_imports", "ruff_format" }`. `ruff_fix` is omitted on
@@ -51,27 +49,29 @@ return {
       return nil
     end
 
-    -- NOTE: `goimports` intentionally gets no `-local` override. gci runs after it and its
-    -- `prefix(<mod>)` section produces the identical std|third-party|local grouping, so the
-    -- flag was overwritten every time -- verified by diffing the full chain with and without
-    -- it. goimports still earns its slot in `formatters_by_ft.go`: it adds and removes
-    -- imports, which gci never does (gci only sorts).
+    -- Go import grouping is project-aware rather than hardcoded to an org: `-local <module>`
+    -- is read out of the nearest go.mod, which makes goimports emit std | third-party | local
+    -- as three groups instead of folding local packages in with third-party.
     --
-    -- This override replaces conform's built-in gci args wholesale (a function `args` is not
-    -- merged with the built-in table), so `--skip-generated` and `--skip-vendor` have to be
-    -- repeated here or they are lost.
-    opts.formatters.gci = {
+    -- This replaced a `goimports -> gofumpt -> gci` chain. gci produced the same grouping via
+    -- `prefix(<mod>)` and ran last, which is why `-local` used to be inert here and was
+    -- deliberately omitted. With gci dropped, this flag is the only thing doing the grouping
+    -- -- do not remove it expecting something downstream to compensate.
+    --
+    -- A function `args` replaces conform's built-in arg table wholesale (it is not merged),
+    -- so `-srcdir $DIRNAME` has to be repeated here or it is lost. goimports needs it to
+    -- resolve the file's own package: conform pipes the buffer over stdin, so without
+    -- -srcdir the tool has no path to locate go.mod from.
+    opts.formatters.goimports = {
       args = function(_, ctx)
-        local args = { "write", "--skip-generated", "--skip-vendor", "-s", "standard", "-s", "default" }
+        local args = { "-srcdir", "$DIRNAME" }
         local mod = get_go_module(ctx)
         if mod then
-          table.insert(args, "-s")
-          table.insert(args, "prefix(" .. mod .. ")")
+          table.insert(args, "-local")
+          table.insert(args, mod)
         end
-        table.insert(args, "$FILENAME")
         return args
       end,
-      stdin = false,
     }
   end,
 }

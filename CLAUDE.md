@@ -105,7 +105,7 @@ Overrides currently in place against a pack, and why:
 
 | Override | Fights | Reason |
 | --- | --- | --- |
-| `conform.lua` `formatters_by_ft.go` | `pack.go` sets `{ "goimports", lsp_format = "last" }` | keeps the gci chain below, and keeps gopls out of the save path |
+| `conform.lua` `formatters_by_ft.go` | `pack.go` sets `{ "goimports", lsp_format = "last" }` | adds `gofumpt`, and keeps gopls out of the save path |
 | `conform.lua` `formatters_by_ft.python` | `pack.python.ruff` prepends `ruff_fix` | `ruff_fix` applies lint autofixes on `:w` — a code change, not a format |
 | `astrolsp.lua` `handlers.stylua = false` | Mason auto-enable | see the Mason-package-becomes-server note under Conventions |
 
@@ -138,12 +138,14 @@ Consequences:
 - **Never set `opts.format_on_save` in `plugins/conform.lua`.** The community module installs a *function* there, gated on `vim.b/vim.g.autoformat`; a table replaces it and breaks the autoformat toggles. Raise the save-path budget via `default_format_opts.timeout_ms` instead (currently 1500ms, synchronous, blocks `:w`).
 - Visual-mode `<Leader>lf` is defined in `astrocore.lua` because the community module only maps normal mode and AstroLSP's visual mapping is suppressed.
 
-Go formatting is dynamic: `conform.lua` reads `module` out of the nearest `go.mod` and passes it to
-`gci`'s prefix section, so import grouping follows the project rather than a hardcoded org. The chain is
-`goimports` → `gofumpt` → `gci`; only gci decides the final grouping, so do **not** re-add
-`goimports -local` (its output is overwritten — verified by diffing the chain with and without it).
-gci's `args` is a function, which replaces conform's built-in arg table wholesale — `--skip-generated`
-and `--skip-vendor` must be repeated there or vendored code gets rewritten.
+Go formatting is dynamic: `conform.lua` reads `module` out of the nearest `go.mod` and passes it as
+`goimports -local <module>`, so import grouping follows the project rather than a hardcoded org. The
+chain is `goimports` → `gofumpt`. `-local` is now the **only** thing splitting local packages out of
+the third-party group — it used to be deliberately omitted because a third step, `gci`, ran last and
+overwrote it; gci was dropped, so do not remove the flag expecting something downstream to compensate.
+goimports' `args` is a function, which replaces conform's built-in arg table wholesale — `-srcdir
+$DIRNAME` must be repeated there, since conform pipes the buffer over stdin and goimports otherwise has
+no path from which to locate `go.mod`.
 
 ### Python: pyrefly + ruff, deduplicated by hand
 
@@ -170,7 +172,7 @@ Plugin fetches go through a corporate proxy, which is why `lazy_setup.lua` caps 
 ## Conventions
 
 - Every non-obvious override in this repo carries a comment explaining *why* — usually which layer it is fighting and what breaks otherwise. Preserve these when editing, and add one when introducing a new override that depends on merge order.
-- `plugins/mason.lua`'s `ensure_installed` holds only the **gaps** — packages no imported pack installs (currently `gci`, `gofumpt`, `prettierd`, `rust-analyzer`, `tree-sitter-cli`). The list *concatenates* with the packs (`opts_extend`), so restating a pack's package would be harmless but would misrepresent who owns it. Add a name here only after checking no pack already does; if you add a formatter to `conform.lua` that no pack supplies, add its binary here too — nothing enforces that.
+- `plugins/mason.lua`'s `ensure_installed` holds only the **gaps** — packages no imported pack installs (currently `gofumpt`, `prettierd`, `rust-analyzer`, `tree-sitter-cli`). The list *concatenates* with the packs (`opts_extend`), so restating a pack's package would be harmless but would misrepresent who owns it. Add a name here only after checking no pack already does; if you add a formatter to `conform.lua` that no pack supplies, add its binary here too — nothing enforces that.
 - **A Mason package name can silently become a running LSP server.** AstroNvim walks `registry.get_installed_package_names()` and enables any package that maps to an lspconfig server (`astronvim/plugins/configs/mason-lspconfig.lua`), so e.g. the `stylua` formatter would otherwise attach as `stylua --lsp` on every Lua buffer. Suppress with `handlers = { <server> = false }` in `astrolsp.lua`. Deleting the name from `ensure_installed` does **not** help — the package stays installed and keeps getting enabled; use `:MasonUninstall` for that.
 - `lazy-lock.json` is **deliberately gitignored**; do not propose committing it. But note this does *not* mean versions float: because `lazy_setup.lua` sets `version = "^6"`, AstroNvim resolves `pin_plugins = true` and imports `astronvim.lazy_snapshot`, which pins most of the plugin set. A fresh clone reproduces AstroNvim's snapshot, not whatever is newest.
 - Mappings, vim options, and autocommands belong in `plugins/astrocore.lua`, not `polish.lua`. `polish.lua` is reserved for the narrow set of things AstroCore's table-driven config cannot express — currently only unsetting an env var, since a `nil` value is unrepresentable in a Lua table.
