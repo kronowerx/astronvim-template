@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A personal Neovim config built on the [AstroNvim](https://github.com/AstroNvim/AstroNvim) v6 user template, managed by `lazy.nvim`. It lives at `~/.config/nvim` — editing a file here changes the running editor; there is no build step and no test suite.
 
-Currently running against Neovim 0.12.4.
+Currently running against Neovim 0.12.5.
 
 ## Research before configuring
 

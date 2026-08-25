@@ -29,8 +29,19 @@ vim.env.GOOGLE_APPLICATION_CREDENTIALS = nil
 -- wherever a server answers. Scoped to documentHighlight only, since a missing
 -- documentHighlight is never actionable; every other method keeps its warning.
 --
--- Presumed a Neovim/snacks bug. Drop this once it stops reproducing (Neovim
--- 0.12.4, snacks.nvim 2.31.0 at the time of writing).
+-- Presumed a Neovim/snacks bug. Drop this once it stops reproducing.
+--
+-- Retested on the 0.12.4 -> 0.12.5 bump (snacks.nvim unchanged at v2.31.0) by swapping
+-- the no-op below for a counter: 900 documentHighlight requests over six fresh headless
+-- sessions on a Dockerfile, both clients attached, zero spurious on_unsupported calls.
+-- Kept regardless -- that is a loop firing synthetic CursorMoved events, not the real
+-- editing this was observed under, so a clean run is not evidence the race is gone. It
+-- costs four inert lines; a wrong removal costs ERROR notifications in daily use. Drop
+-- it after a few quiet weeks of real use.
+--
+-- Also recheck the signature on each bump: this positional wrapper breaks silently if
+-- `on_unsupported` moves. Still the 5th parameter of `vim.lsp.buf_request` on 0.12.5
+-- ($VIMRUNTIME/lua/vim/lsp.lua:1232).
 local buf_request = vim.lsp.buf_request
 vim.lsp.buf_request = function(bufnr, method, params, handler, on_unsupported)
   if method == "textDocument/documentHighlight" and on_unsupported == nil then on_unsupported = function() end end

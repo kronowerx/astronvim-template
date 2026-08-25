@@ -10,7 +10,7 @@ return {
       -- Configuration table of features provided by AstroLSP
       features = {
         -- NOTE: no `codelens` key. AstroNvim already computes the correct default
-        -- (`not vim.version.range("0.12.0-0.12.1"):has(...)`, i.e. true on 0.12.4);
+        -- (`not vim.version.range("0.12.0-0.12.1"):has(...)`, i.e. true on 0.12.5);
         -- setting it here only restated that.
         inlay_hints = false, -- enable/disable inlay hints on start
         semantic_tokens = true, -- enable/disable semantic token highlighting
