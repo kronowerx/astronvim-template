@@ -12,8 +12,7 @@ return {
     opts.default_format_opts = vim.tbl_extend("force", opts.default_format_opts or {}, { timeout_ms = 1500 })
 
     -- Only filetypes this config genuinely disagrees with the packs on are listed here.
-    -- lua (stylua) and sh/zsh (shfmt + shellcheck) are left entirely to
-    -- `astrocommunity.pack.{lua,bash}`.
+    -- lua (stylua) is left entirely to `astrocommunity.pack.lua`.
 
     -- Overrides `astrocommunity.pack.go`, which sets `{ "goimports", lsp_format = "last" }`.
     -- Assigning the key replaces that wholesale, which is the intent: dropping
@@ -27,6 +26,15 @@ return {
     -- purpose: it applies ruff's lint autofixes on every `:w`, which is a code change rather
     -- than a formatting change. Delete this line to take the pack's chain instead.
     opts.formatters_by_ft.python = { "ruff_organize_imports", "ruff_format" }
+    -- Overrides `astrocommunity.pack.bash`, which sets `{ "shfmt", "shellcheck" }`, for the
+    -- same reason `ruff_fix` is dropped above. conform's `shellcheck` entry is not a
+    -- formatter: it is `shellcheck '$FILENAME' --format=diff | patch -p1 '$FILENAME'`, so
+    -- `:w` applies lint autofixes -- `cat $f` becomes `cat "$f"`. It is the worse of the two
+    -- cases, because bashls runs shellcheck internally and already reports SC2086 as a
+    -- diagnostic: the warning you just read silently resolves itself with your code rewritten
+    -- underneath it. Dropping it costs no diagnostics -- those come from bashls, not conform.
+    opts.formatters_by_ft.sh = { "shfmt" }
+    opts.formatters_by_ft.zsh = { "shfmt" }
     -- No pack supplies a formatter for these; jsonls/marksman/taplo are LSP-only here
     -- (and AstroLSP formatting is disabled, so their format capability never runs).
     opts.formatters_by_ft.json = { "prettierd" }
