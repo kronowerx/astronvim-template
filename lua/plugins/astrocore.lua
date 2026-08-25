@@ -90,7 +90,6 @@ return {
         -- tabline stays defined, so it remains toggleable with <Leader>ut and the
         -- interactive buffer pickers (<Leader>bb/bd/b\/b|) keep working.
         showtabline = 0,
-        autoread = true, -- reload files changed on disk outside neovim
       },
     },
     -- Mappings can be configured through AstroCore as well. Every mapping in this config
@@ -142,6 +141,10 @@ return {
       -- adding BufEnter/CursorHold for more eager reloading while keeping its `nofile`
       -- guard. CursorHoldI is excluded on purpose: reloading from disk mid-insert can pull
       -- text out from under the cursor.
+      --
+      -- This is the whole of the reload-from-disk setup: `:checktime` is what notices the
+      -- change, and `autoread` -- on by default in Neovim, so not restated in `options`
+      -- above -- is what makes the reload silent instead of a prompt.
       checktime = {
         {
           event = { "FocusGained", "BufEnter", "CursorHold", "TermClose", "TermLeave" },
