@@ -6,6 +6,60 @@
 -- table here deep-merges on top and all of AstroNvim's other defaults survive. A function
 -- `opts` that reassigned `opts.options` would drop them.
 
+-- Mappings are built above the spec so the harpoon slots can be generated in a loop.
+-- `opts` itself stays a plain table (see the NOTE above); only the value assigned to
+-- `mappings` is computed.
+---@type table<string, table<string, AstroCoreMapping|false>>
+local mappings = {
+  n = {
+    -- Buffer navigation. Deliberately not <Tab>, which is <C-i> in a terminal and
+    -- would clobber jumplist-forward. Mirrors the built-in ]b/[b.
+    ["<S-l>"] = { function() require("astrocore.buffer").nav(vim.v.count1) end, desc = "Next buffer" },
+    ["<S-h>"] = { function() require("astrocore.buffer").nav(-vim.v.count1) end, desc = "Previous buffer" },
+
+    -- Oil. Lives here rather than in the plugin's `config` so it carries a description
+    -- and follows this repo's one-place-for-mappings convention.
+    ["-"] = { "<Cmd>Oil --float<CR>", desc = "Open parent directory" },
+
+    -- Harpoon: four pinned file slots. These were `vim.keymap.set` calls inside the
+    -- plugin's `config`, which cost them their which-key group names and left <C-e>
+    -- and <C-S-P>/<C-S-N> with no description at all. Every entry is a function that
+    -- `require`s harpoon, so lazy.nvim loads the plugin on first use -- which is also
+    -- what lets plugins/harpoon.lua stay `lazy = true` instead of loading at startup.
+    ["<Leader>a"] = { desc = "Harpoon pin" },
+    -- NOTE: no `<Leader>x` group declared. That prefix is already AstroNvim's
+    -- "Quickfix/Lists" section (`_astrocore_mappings.lua` `_map_sections.x`, alongside
+    -- <Leader>xq and <Leader>xl), so the unpin keys below are guests inside an existing
+    -- group rather than owners of it -- declaring a group here would rename AstroNvim's.
+    -- Worth rebinding to a free prefix if the mixed group ever gets confusing.
+    -- NOTE: <C-S-P>/<C-S-N> only reach Neovim from a terminal that speaks the kitty
+    -- keyboard protocol. Under tmux that additionally needs `extended-keys on`, or the
+    -- keys collapse to a plain <C-P>/<C-N>; see ~/.config/tmux/tmux.conf.
+    ["<C-S-P>"] = { function() require("harpoon"):list():prev() end, desc = "Harpoon previous" },
+    ["<C-S-N>"] = { function() require("harpoon"):list():next() end, desc = "Harpoon next" },
+    -- Overrides the built-in scroll-down-one-line, on purpose.
+    ["<C-e>"] = {
+      function()
+        local harpoon = require "harpoon"
+        harpoon.ui:toggle_quick_menu(harpoon:list())
+      end,
+      desc = "Harpoon quick menu",
+    },
+  },
+  v = {
+    -- With `formatting.disabled = true`, AstroLSP's visual <Leader>lf is suppressed and
+    -- the conform module only supplies normal mode, so range formatting needs a key here.
+    ["<Leader>lf"] = { ":<C-U>'<,'>Format<CR>", desc = "Format selection" },
+  },
+}
+
+for i = 1, 4 do
+  mappings.n["<Leader>" .. i] = { function() require("harpoon"):list():select(i) end, desc = "Harpoon go to " .. i }
+  mappings.n["<Leader>a" .. i] =
+    { function() require("harpoon"):list():replace_at(i) end, desc = "Harpoon pin to " .. i }
+  mappings.n["<Leader>x" .. i] = { function() require("harpoon"):list():remove_at(i) end, desc = "Harpoon unpin " .. i }
+end
+
 ---@type LazySpec
 return {
   "AstroNvim/astrocore",
@@ -30,21 +84,10 @@ return {
         autoread = true, -- reload files changed on disk outside neovim
       },
     },
-    -- Mappings can be configured through AstroCore as well.
+    -- Mappings can be configured through AstroCore as well. Every mapping in this config
+    -- belongs here, including ones for third-party plugins -- see the block above.
     -- NOTE: keycodes follow the casing in the vimdocs. For example, `<Leader>` must be capitalized
-    mappings = {
-      n = {
-        -- Buffer navigation. Deliberately not <Tab>, which is <C-i> in a terminal and
-        -- would clobber jumplist-forward. Mirrors the built-in ]b/[b.
-        ["<S-l>"] = { function() require("astrocore.buffer").nav(vim.v.count1) end, desc = "Next buffer" },
-        ["<S-h>"] = { function() require("astrocore.buffer").nav(-vim.v.count1) end, desc = "Previous buffer" },
-      },
-      v = {
-        -- With `formatting.disabled = true`, AstroLSP's visual <Leader>lf is suppressed and
-        -- the conform module only supplies normal mode, so range formatting needs a key here.
-        ["<Leader>lf"] = { ":<C-U>'<,'>Format<CR>", desc = "Format selection" },
-      },
-    },
+    mappings = mappings,
     -- Treesitter parsers are configured here, not in the nvim-treesitter spec (which is
     -- only a download utility on the `main` branch).
     --

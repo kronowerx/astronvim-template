@@ -1,59 +1,18 @@
--- Harpoon config
+-- Harpoon: four pinned file slots, navigated by index.
+--
+-- NOTE: no mappings here. They live in plugins/astrocore.lua per this repo's convention,
+-- which is also what gives them which-key group names and descriptions. Because each of
+-- those mappings is a function that `require`s harpoon, lazy.nvim loads this plugin on
+-- first keypress -- so it needs no `event`/`keys` trigger and no longer loads at startup
+-- (a bare `config` with no trigger meant `lazy = false`).
+--
+-- `opts` is safe despite harpoon2's setup being a method: `Harpoon.setup(self, config)`
+-- detects being called with a config as its first argument and re-dispatches, so
+-- lazy.nvim's `require("harpoon").setup(opts)` is a supported call shape.
 return {
   "ThePrimeagen/harpoon",
   branch = "harpoon2",
+  lazy = true,
   dependencies = { "nvim-lua/plenary.nvim" },
-  config = function()
-    local harpoon = require "harpoon"
-
-    -- REQUIRED
-    harpoon:setup()
-    -- REQUIRED
-
-    -- vim.keymap.set("n", "<leader>a", function() harpoon:list():add() end)
-    vim.keymap.set("n", "<C-e>", function() harpoon.ui:toggle_quick_menu(harpoon:list()) end)
-
-    vim.keymap.set("n", "<leader>a1", function() harpoon:list():replace_at(1) end, {
-      desc = "[A]dd to [1]",
-    })
-    vim.keymap.set("n", "<leader>a2", function() harpoon:list():replace_at(2) end, {
-      desc = "[A]dd to [2]",
-    })
-    vim.keymap.set("n", "<leader>a3", function() harpoon:list():replace_at(3) end, {
-      desc = "[A]dd to [3]",
-    })
-    vim.keymap.set("n", "<leader>a4", function() harpoon:list():replace_at(4) end, {
-      desc = "[A]dd to [4]",
-    })
-
-    vim.keymap.set("n", "<leader>x1", function() harpoon:list():remove_at(1) end, {
-      desc = "Remove at [1]",
-    })
-    vim.keymap.set("n", "<leader>x2", function() harpoon:list():remove_at(2) end, {
-      desc = "Remove at [2]",
-    })
-    vim.keymap.set("n", "<leader>x3", function() harpoon:list():remove_at(3) end, {
-      desc = "Remove at [3]",
-    })
-    vim.keymap.set("n", "<leader>x4", function() harpoon:list():remove_at(4) end, {
-      desc = "Remove at [4]",
-    })
-
-    vim.keymap.set("n", "<leader>1", function() harpoon:list():select(1) end, {
-      desc = "Go to [1]",
-    })
-    vim.keymap.set("n", "<leader>2", function() harpoon:list():select(2) end, {
-      desc = "Go to [2]",
-    })
-    vim.keymap.set("n", "<leader>3", function() harpoon:list():select(3) end, {
-      desc = "Go to [3]",
-    })
-    vim.keymap.set("n", "<leader>4", function() harpoon:list():select(4) end, {
-      desc = "Go to [4]",
-    })
-
-    -- Toggle previous & next buffers stored within Harpoon list
-    vim.keymap.set("n", "<C-S-P>", function() harpoon:list():prev() end)
-    vim.keymap.set("n", "<C-S-N>", function() harpoon:list():next() end)
-  end,
+  opts = {},
 }
