@@ -71,7 +71,16 @@ return {
         spell = false,
         -- block cursor everywhere except replace/operator-pending
         guicursor = "n-v-c-sm-i-ci-ve:block,r-cr-o:hor20,a:blinkwait700-blinkoff400-blinkon250-Cursor/lCursor",
-        -- hard tabs, 4 columns wide (overrides AstroNvim's expandtab/tabstop=2)
+        -- Hard tabs, 4 columns wide (overrides AstroNvim's expandtab/tabstop=2).
+        --
+        -- NOTE: this is the *fallback*, not the effective setting for most files.
+        -- AstroNvim ships guess-indent with a BufReadPost autocmd calling
+        -- `set_from_buffer(buf, true, true)`, which re-derives these per buffer from the
+        -- file's own indentation. Measured: a 4-space file gets expandtab=true sw=4, a
+        -- tab-indented file expandtab=false sw=0 (follow tabstop). These values only
+        -- survive where there is nothing to infer from -- new buffers, and files with no
+        -- indented lines. That is the intent (match the file you are editing); the point
+        -- is that editing these numbers will not change how an existing file indents.
         tabstop = 4,
         softtabstop = 4,
         shiftwidth = 4,

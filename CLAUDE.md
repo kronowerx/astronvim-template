@@ -56,7 +56,7 @@ Lint and format the config itself with the Mason-installed binaries (`~/.local/s
 ~/.local/share/nvim/mason/bin/selene .    # selene.toml + neovim.yml std
 ```
 
-Note the deliberate mismatch: the editor's global indent options are 4-wide hard tabs (`astrocore.lua`), but this repo's own Lua is formatted by stylua to 2-wide spaces. Format config files with stylua rather than trusting the editor defaults.
+Note the deliberate mismatch: the editor's global indent options are 4-wide hard tabs (`astrocore.lua`), but this repo's own Lua is formatted by stylua to 2-wide spaces. Format config files with stylua rather than trusting the editor defaults. Those globals are only a fallback in any case — AstroNvim ships guess-indent with a `BufReadPost` autocmd that re-derives `expandtab`/`shiftwidth` per buffer from the file being opened, so they apply to new buffers and files with nothing to infer from.
 
 ## Architecture
 
