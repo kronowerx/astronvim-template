@@ -6,8 +6,12 @@
 ---@type LazySpec
 return {
   "AstroNvim/astroui",
-  lazy = false,
-  priority = 10000,
+  -- NOTE: no `lazy`/`priority` here. Upstream `_astroui.lua` is `lazy = true`, and it should
+  -- stay that way: astrocore (the `lazy = false, priority = 10000` start plugin) requires
+  -- astroui during its own setup to call `set_colorscheme()`, so astroui is pulled in exactly
+  -- when it is needed. This file briefly carried `lazy = false, priority = 10000` from an
+  -- early attempt at getting catppuccin to apply; the real fix was the flavour pinning in
+  -- plugins/catppuccin.lua, whose reasoning cites astroui being lazy upstream.
   ---@type AstroUIOpts
   opts = {
     -- change colorscheme
