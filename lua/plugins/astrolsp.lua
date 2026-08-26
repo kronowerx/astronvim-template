@@ -60,15 +60,27 @@ return {
         --                         the maintainer-curated subset.
         -- To go back to a minimal gopls, re-add a `gopls` block here -- it merges over the
         -- pack -- and set those keys to `vim.NIL` to delete them rather than to `false`.
-        -- NOTE: no `pyrefly` entry. The obvious `settings = { pyrefly = { ... } }` shape is
-        -- inert twice over: pyrefly requests the `python` configuration section and never
-        -- `pyrefly`, so the table is never even transmitted; and `preset` is a
-        -- pyrefly.toml/CLI key with no LSP-settings equivalent (the server's real keys are
-        -- typeCheckingMode, displayTypeErrors, disableLanguageServices, disableTypeErrors,
-        -- extraPaths -- unknown fields are dropped without a warning). If a type-checking
-        -- mode is ever wanted, the working shape is:
-        --   settings = { python = { pyrefly = { typeCheckingMode = "..." } } }
-        -- and note it applies only to files not already covered by a pyrefly.toml.
+        -- Pyrefly's `preset` / `errors` config keys are NOT reachable over LSP: they are
+        -- pyrefly.toml / `[tool.pyrefly]` keys, and unknown fields in `settings` are dropped
+        -- without a warning. (Nor is `settings = { pyrefly = ... }` ever transmitted -- pyrefly
+        -- requests the `python` section, so the table has to be nested as below.)
+        --
+        -- `typeCheckingMode` is the one global knob: it is a whole preset, applied only to files
+        -- NOT covered by a pyrefly.toml / `[tool.pyrefly]`, which always take precedence. So this
+        -- is a baseline for unconfigured code, not an override -- exactly the right direction.
+        -- Values: auto (default; migrates a nearby mypy/pyright config in memory, else `basic`),
+        -- off, basic, legacy, default, strict, all.
+        --
+        -- Individual error kinds cannot be enabled here at any granularity. `errors.<kind>` needs
+        -- a real config file in the project (`pyrefly init` writes one). Measured against pyrefly
+        -- 1.2.0: `strict` does not include `unannotated-return`; only the `all` preset does, and
+        -- `all` also turns on explicit-any, no-any-return, implicit-any-* and unused-ignore, which
+        -- is why it is not used here. The only other config-file route, the `configPath` setting,
+        -- replaces config discovery for every file and would break projects that ship their own
+        -- pyrefly.toml -- do not reach for it to smuggle in an `errors` table.
+        pyrefly = {
+          settings = { python = { pyrefly = { typeCheckingMode = "default" } } },
+        },
         -- Ruff runs as a linter alongside pyrefly. Ruff 0.16 enables ~413 rules by default
         -- (bugbear, pyupgrade, simplify, comprehensions, pylint, perflint, refurb, ...),
         -- almost none of which a type checker reports -- so it earns its place. But
