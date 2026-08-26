@@ -6,6 +6,29 @@
 -- table here deep-merges on top and all of AstroNvim's other defaults survive. A function
 -- `opts` that reassigned `opts.options` would drop them.
 
+-- `virtual_lines` cannot label its own diagnostics: its opts are severity/current_line/format
+-- only (`:h vim.diagnostic.Opts.VirtualLines`) -- there is no `source` field like `virtual_text`
+-- has. So the label is built here, replacing Neovim's default formatter (which emits
+-- `code: message`) with `source code: message` -- e.g. `Ruff F841: ...` next to
+-- `Pyrefly unused-variable: ...`, the pair this config deliberately lets overlap.
+--
+-- The label is unconditional rather than gated on "is there more than one source in this
+-- buffer", which is what `virtual_text`'s `source = "if_many"` does. That gate was tried and
+-- reverted: `count_sources` runs when a *server publishes*, not when the line is drawn, so on a
+-- freshly opened file whichever of ruff/pyrefly attaches first counts one source and renders
+-- unlabelled forever -- until an edit makes it republish. Measured, not theorised: pyrefly's
+-- diagnostics came out labelled and ruff's did not. A label that disappears exactly when two
+-- servers are still racing is worse than one that is occasionally redundant.
+---@param diagnostic vim.Diagnostic
+---@return string
+local function format_virtual_line(diagnostic)
+  local label = {}
+  if diagnostic.source then label[#label + 1] = diagnostic.source end
+  if diagnostic.code then label[#label + 1] = tostring(diagnostic.code) end
+  if #label == 0 then return diagnostic.message end
+  return string.format("%s: %s", table.concat(label, " "), diagnostic.message)
+end
+
 -- Mappings are built above the spec so the harpoon slots can be generated in a loop.
 -- `opts` itself stays a plain table (see the NOTE above); only the value assigned to
 -- `mappings` is computed.
@@ -91,6 +114,30 @@ return {
         -- interactive buffer pickers (<Leader>bb/bd/b\/b|) keep working.
         showtabline = 0,
       },
+    },
+    -- Diagnostic rendering. AstroNvim's `_astrocore.lua` sets `virtual_text = true` (a plain
+    -- boolean); these tables merge over it and split the two renderers by cursor position
+    -- using the `current_line` field both handlers accept:
+    --   virtual_text  `current_line = false` -> end-of-line text on every line EXCEPT the
+    --     cursor's, so the file still reads as an at-a-glance overview.
+    --   virtual_lines `current_line = true`  -> the cursor line's diagnostics rendered in
+    --     full underneath it. This is the point of the pair: end-of-line text is truncated
+    --     at the window edge, and ruff/pyrefly messages routinely run past it in a vertical
+    --     split.
+    -- They are exact complements (`diagnostic.lua` skips a line when `current_line == false`
+    -- and `line == lnum`), so no line ever shows both, and neither needs an autocmd -- Neovim
+    -- installs its own CursorMoved handler whenever either `current_line` is non-nil.
+    -- Both stay toggleable: <Leader>uv / <Leader>uV stash and restore these exact tables.
+    -- Both renderers name the emitting server, via different routes: `virtual_text` has a
+    -- built-in `source` option, `virtual_lines` does not and goes through `format_virtual_line`
+    -- above (see there for why neither uses "if_many"). `source` is applied AFTER any `format`,
+    -- so it prefixes whatever the formatter returned. The end-of-line text deliberately carries
+    -- the source but NOT the code -- it is the at-a-glance overview and every column it spends
+    -- is one the message loses to truncation; the cursor line, which has a full window width to
+    -- itself, carries both.
+    diagnostics = {
+      virtual_text = { current_line = false, source = true },
+      virtual_lines = { current_line = true, format = format_virtual_line },
     },
     -- Mappings can be configured through AstroCore as well. Every mapping in this config
     -- belongs here, including ones for third-party plugins -- see the block above.
