@@ -4,15 +4,15 @@
 -- Flavour is pinned in three places on purpose, because the name `catppuccin` has three
 -- independent claimants on the runtimepath and they must not disagree:
 --
---   * astroui sets `colorscheme = "catppuccin-mocha"`, whose colors file calls
---     `load "mocha"` with an explicit argument. This is the authoritative path, and
+--   * astroui sets `colorscheme = "catppuccin-frappe"`, whose colors file calls
+--     `load "frappe"` with an explicit argument. This is the authoritative path, and
 --     the only one of the three that is unambiguous -- no other runtime file claims the
 --     suffixed name.
 --   * `load()` with NO argument (the bare `catppuccin` name) instead resolves
 --     `options.flavour or options.background[vim.o.background]` at load time. If setup()
 --     has not run yet, options are defaults -- whatever the plugin ships in
 --     `background.dark`, which is not ours to rely on. Setting both `flavour` and
---     `background` here means even that path lands on mocha deliberately.
+--     `background` here means even that path lands on frappe deliberately.
 --   * Neovim 0.12 ships its OWN `$VIMRUNTIME/colors/catppuccin.vim`, so the bare name is
 --     now genuinely ambiguous: the plugin's `colors/catppuccin.lua` only wins on rtp order.
 --     This is why the AstroNvim v6 migration guide tells users to rename `catppuccin` ->
@@ -33,7 +33,7 @@
 return {
   "catppuccin/nvim",
   opts = {
-    flavour = "mocha",
-    background = { light = "latte", dark = "mocha" },
+    flavour = "frappe",
+    background = { light = "latte", dark = "frappe" },
   },
 }

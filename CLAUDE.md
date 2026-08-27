@@ -153,7 +153,7 @@ Both attach, via `pack.python.pyrefly` and `pack.python.ruff`. Ruff's overlappin
 
 ### Colorscheme flavour is pinned in three places
 
-Catppuccin has two independent flavour-resolution paths that must agree. `astroui.lua` sets the **suffixed** name `catppuccin-mocha` (whose colors file calls `load "mocha"` explicitly); `plugins/catppuccin.lua` sets both `flavour` and `background.dark` so the bare-`catppuccin` path resolves the same flavour instead of whatever the plugin defaults to. Do not give catppuccin `lazy = false` or a `priority` — the colorscheme is applied at the end of **astrocore's** setup (`astrocore/init.lua` calls `astroui.set_colorscheme()`), and astrocore is the `lazy = false, priority = 10000` start plugin; astroui itself is `lazy = true` upstream. So a start-loaded catppuccin would run `:colorscheme` before its own `setup()` and recompile every flavour twice per launch.
+Catppuccin has two independent flavour-resolution paths that must agree. `astroui.lua` sets the **suffixed** name `catppuccin-frappe` (whose colors file calls `load "frappe"` explicitly); `plugins/catppuccin.lua` sets both `flavour` and `background.dark` so the bare-`catppuccin` path resolves the same flavour instead of whatever the plugin defaults to. Do not give catppuccin `lazy = false` or a `priority` — the colorscheme is applied at the end of **astrocore's** setup (`astrocore/init.lua` calls `astroui.set_colorscheme()`), and astrocore is the `lazy = false, priority = 10000` start plugin; astroui itself is `lazy = true` upstream. So a start-loaded catppuccin would run `:colorscheme` before its own `setup()` and recompile every flavour twice per launch.
 
 ### Inert template stubs
 
