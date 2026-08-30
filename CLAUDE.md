@@ -84,7 +84,7 @@ should only carry an override where this config genuinely disagrees with a pack 
 carries a comment saying which pack it is fighting.
 
 Currently imported: `bash`, `docker`, `go`, `helm`, `json`, `lua`, `markdown`,
-`python.{base,pyrefly,ruff}`, `rust`, `toml`, `yaml`. Note `docker` transitively imports
+`python.{base,basedpyright,ruff}`, `rust`, `toml`, `yaml`. Note `docker` transitively imports
 `yaml` and `rust` transitively imports `toml`; both are also listed explicitly.
 
 There is deliberately **no `pack.sql`**. It was imported and then removed: SQL editing isn't
@@ -98,8 +98,8 @@ Two ordering facts that matter:
   which list-replaces `treesitter.ensure_installed`. Every other pack uses a plain table and so
   appends via astrocore's `opts_extend`. A pack imported before helm loses its parsers.
 - **`python` is deliberately not the default pack.** Plain `astrocommunity.pack.python` is
-  base + basedpyright + black + isort, which would put a second type checker next to pyrefly and
-  a second formatter chain next to ruff. Import the three subpacks instead.
+  base + basedpyright + black + isort, which would put a second formatter chain next to ruff.
+  Import the base, basedpyright, and ruff subpacks instead.
 
 Overrides currently in place against a pack, and why:
 
@@ -107,6 +107,7 @@ Overrides currently in place against a pack, and why:
 | --- | --- | --- |
 | `conform.lua` `formatters_by_ft.go` | `pack.go` sets `{ "goimports", lsp_format = "last" }` | adds `gofumpt`, and keeps gopls out of the save path |
 | `conform.lua` `formatters_by_ft.python` | `pack.python.ruff` prepends `ruff_fix` | `ruff_fix` applies lint autofixes on `:w` — a code change, not a format |
+| `astrolsp.lua` `handlers.pyrefly = false` | Mason auto-enable | prevents an already-installed pyrefly package from attaching after the switch to basedpyright |
 | `astrolsp.lua` `handlers.stylua = false` | Mason auto-enable | see the Mason-package-becomes-server note under Conventions |
 
 `pack.go`'s gopls settings are taken **as-is**, including two opinionated ones: `staticcheck = true`
@@ -147,9 +148,9 @@ goimports' `args` is a function, which replaces conform's built-in arg table who
 $DIRNAME` must be repeated there, since conform pipes the buffer over stdin and goimports otherwise has
 no path from which to locate `go.mod`.
 
-### Python: pyrefly + ruff, deduplicated by hand
+### Python: basedpyright + ruff, deduplicated by hand
 
-Both attach, via `pack.python.pyrefly` and `pack.python.ruff`. Ruff's overlapping codes are ignored in `astrolsp.lua` (`F401`, `F821`, `I001`) so a line never gets two diagnostics for the same problem. `F841` is deliberately *not* ignored — pyrefly only reports it inside annotated functions. If you find another duplicated pair, add its code to that ignore list rather than disabling ruff.
+Both attach, via `pack.python.basedpyright` and `pack.python.ruff`: basedpyright provides the LSP and type checking, while ruff provides linting. Python formatting is the conform chain `ruff_organize_imports` -> `ruff_format`; `ruff_fix` remains excluded so saving never applies lint fixes implicitly. Ruff's overlapping `F401` and `F821` diagnostics are ignored in `astrolsp.lua` in favor of basedpyright, and `I001` is ignored because imports are organized on save. `F841` remains enabled in ruff, which owns linting; basedpyright reports its overlapping unused-variable diagnostic only as information.
 
 ### Colorscheme flavour is pinned in three places
 

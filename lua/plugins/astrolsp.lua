@@ -23,7 +23,10 @@ return {
       -- covers. `false` skips setup entirely (`:h astrolsp` -> handlers).
       -- Removing a name from `ensure_installed` will NOT undo this -- the package stays on
       -- disk and keeps getting enabled. Use this table, or `:MasonUninstall`.
-      handlers = { stylua = false },
+      -- pyrefly is disabled explicitly because Mason packages remain installed after their
+      -- pack import is removed, and AstroNvim would otherwise keep auto-enabling the stale
+      -- server alongside basedpyright.
+      handlers = { pyrefly = false, stylua = false },
       -- NOTE: no `formatting` block here on purpose. conform owns all formatting via
       -- `astrocommunity.editing-support.conform-nvim`, which sets `formatting.disabled = true`.
       -- Anything under `formatting` here would merge OVER that (lua/plugins/* merges after
@@ -60,41 +63,21 @@ return {
         --                         the maintainer-curated subset.
         -- To go back to a minimal gopls, re-add a `gopls` block here -- it merges over the
         -- pack -- and set those keys to `vim.NIL` to delete them rather than to `false`.
-        -- Pyrefly's `preset` / `errors` config keys are NOT reachable over LSP: they are
-        -- pyrefly.toml / `[tool.pyrefly]` keys, and unknown fields in `settings` are dropped
-        -- without a warning. (Nor is `settings = { pyrefly = ... }` ever transmitted -- pyrefly
-        -- requests the `python` section, so the table has to be nested as below.)
+        -- `pack.python.basedpyright` owns the Python LSP/type-checker configuration. Its basic
+        -- baseline applies to unconfigured projects; pyrightconfig.json or [tool.basedpyright]
+        -- can select a different typeCheckingMode per project.
         --
-        -- `typeCheckingMode` is the one global knob: it is a whole preset, applied only to files
-        -- NOT covered by a pyrefly.toml / `[tool.pyrefly]`, which always take precedence. So this
-        -- is a baseline for unconfigured code, not an override -- exactly the right direction.
-        -- Values: auto (default; migrates a nearby mypy/pyright config in memory, else `basic`),
-        -- off, basic, legacy, default, strict, all.
-        --
-        -- Individual error kinds cannot be enabled here at any granularity. `errors.<kind>` needs
-        -- a real config file in the project (`pyrefly init` writes one). Measured against pyrefly
-        -- 1.2.0: `strict` does not include `unannotated-return`; only the `all` preset does, and
-        -- `all` also turns on explicit-any, no-any-return, implicit-any-* and unused-ignore, which
-        -- is why it is not used here. The only other config-file route, the `configPath` setting,
-        -- replaces config discovery for every file and would break projects that ship their own
-        -- pyrefly.toml -- do not reach for it to smuggle in an `errors` table.
-        pyrefly = {
-          settings = { python = { pyrefly = { typeCheckingMode = "default" } } },
-        },
-        -- Ruff runs as a linter alongside pyrefly. Ruff 0.16 enables ~413 rules by default
+        -- Ruff runs as a linter alongside basedpyright. Ruff 0.16 enables ~413 rules by default
         -- (bugbear, pyupgrade, simplify, comprehensions, pylint, perflint, refurb, ...),
         -- almost none of which a type checker reports -- so it earns its place. But
-        -- pyrefly's LSP *does* report a few of the same things, and those exact codes are
+        -- basedpyright *does* report a few of the same things, and those exact codes are
         -- ignored here to avoid two diagnostics on one line:
-        --   F401 unused-import    -> pyrefly `unused-import`, reported reliably at module
-        --                            level regardless of annotations
-        --   F821 undefined-name   -> pyrefly `unknown-name` (and pyrefly resolves imports,
-        --                            so it is the more accurate of the two)
+        --   F401 unused-import    -> basedpyright `reportUnusedImport`
+        --   F821 undefined-name   -> basedpyright `reportUndefinedVariable`
         --   I001 unsorted-imports -> conform runs ruff_organize_imports on every save, so
         --                            the diagnostic is always about to be auto-fixed
-        -- F841 (unused-variable) is deliberately NOT ignored even though pyrefly overlaps
-        -- it: pyrefly only reports it inside *annotated* functions, while ruff catches it
-        -- everywhere. An occasional duplicate beats silently missing it in untyped code.
+        -- F841 (unused-variable) is deliberately NOT ignored: ruff owns linting, while the
+        -- basedpyright pack reports its overlapping unused-variable diagnostic as information.
         -- If you spot another duplicated pair, add its code here rather than disabling ruff.
         -- Add `configurationPreference = "filesystemFirst"` if a project's own ruff config
         -- should take priority over these editor settings.

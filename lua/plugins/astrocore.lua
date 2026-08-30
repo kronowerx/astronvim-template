@@ -10,14 +10,13 @@
 -- only (`:h vim.diagnostic.Opts.VirtualLines`) -- there is no `source` field like `virtual_text`
 -- has. So the label is built here, replacing Neovim's default formatter (which emits
 -- `code: message`) with `source code: message` -- e.g. `Ruff F841: ...` next to
--- `Pyrefly unused-variable: ...`, the pair this config deliberately lets overlap.
+-- `basedpyright reportUnusedVariable: ...`, the pair this config deliberately lets overlap.
 --
 -- The label is unconditional rather than gated on "is there more than one source in this
 -- buffer", which is what `virtual_text`'s `source = "if_many"` does. That gate was tried and
 -- reverted: `count_sources` runs when a *server publishes*, not when the line is drawn, so on a
--- freshly opened file whichever of ruff/pyrefly attaches first counts one source and renders
--- unlabelled forever -- until an edit makes it republish. Measured, not theorised: pyrefly's
--- diagnostics came out labelled and ruff's did not. A label that disappears exactly when two
+-- freshly opened file whichever of ruff/basedpyright attaches first counts one source and renders
+-- unlabelled forever -- until an edit makes it republish. A label that disappears exactly when two
 -- servers are still racing is worse than one that is occasionally redundant.
 ---@param diagnostic vim.Diagnostic
 ---@return string
@@ -122,7 +121,7 @@ return {
     --     cursor's, so the file still reads as an at-a-glance overview.
     --   virtual_lines `current_line = true`  -> the cursor line's diagnostics rendered in
     --     full underneath it. This is the point of the pair: end-of-line text is truncated
-    --     at the window edge, and ruff/pyrefly messages routinely run past it in a vertical
+    --     at the window edge, and ruff/basedpyright messages routinely run past it in a vertical
     --     split.
     -- They are exact complements (`diagnostic.lua` skips a line when `current_line == false`
     -- and `line == lnum`), so no line ever shows both, and neither needs an autocmd -- Neovim

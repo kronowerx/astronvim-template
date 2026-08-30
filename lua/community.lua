@@ -23,13 +23,11 @@ return {
   { import = "astrocommunity.pack.json" },
   { import = "astrocommunity.pack.lua" },
   { import = "astrocommunity.pack.markdown" },
-  -- Deliberately NOT `astrocommunity.pack.python`, which is base + basedpyright + black +
-  -- isort. basedpyright would be a second type checker running alongside pyrefly, and
-  -- black/isort a second formatter chain alongside ruff. These three subpacks are the same
-  -- pyrefly + ruff pairing this config already ran by hand; see the ruff `lint.ignore` list
-  -- in plugins/astrolsp.lua for how the overlapping diagnostics are deduplicated.
+  -- Deliberately NOT `astrocommunity.pack.python`, which also imports black + isort.
+  -- Importing these subpacks keeps basedpyright as the LSP/type checker and ruff as the
+  -- formatter/linter; see plugins/astrolsp.lua for the overlapping diagnostic policy.
   { import = "astrocommunity.pack.python.base" },
-  { import = "astrocommunity.pack.python.pyrefly" },
+  { import = "astrocommunity.pack.python.basedpyright" },
   { import = "astrocommunity.pack.python.ruff" },
   { import = "astrocommunity.pack.rust" }, -- transitively imports pack.toml
   { import = "astrocommunity.pack.toml" },
