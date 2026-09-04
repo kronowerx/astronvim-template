@@ -200,6 +200,26 @@ return {
           end,
         },
       },
+      -- Mermaid (`.mmd`) always indents with 4 spaces, regardless of what the file on disk
+      -- uses. This only sticks because plugins/guess-indent.lua lists `mermaid` in
+      -- `filetype_exclude`: FileType fires from the runtime's `filetypedetect` BufRead autocmd,
+      -- which is registered at startup and so runs BEFORE astrocore's GuessIndent BufReadPost
+      -- handler -- without the exclusion guess-indent would re-derive these from the buffer a
+      -- moment later and win. There is no runtime ftplugin/indent file for mermaid to fight.
+      mermaid_indent = {
+        {
+          event = "FileType",
+          pattern = "mermaid",
+          desc = "Fixed 4-space indentation for Mermaid diagrams",
+          callback = function(args)
+            local bo = vim.bo[args.buf]
+            bo.expandtab = true
+            bo.tabstop = 4
+            bo.softtabstop = 4
+            bo.shiftwidth = 4
+          end,
+        },
+      },
     },
   },
 }
