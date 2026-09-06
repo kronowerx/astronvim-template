@@ -46,15 +46,20 @@ return {
 
     local function get_go_module(ctx)
       local root = vim.fs.root(ctx.dirname, { "go.mod" })
-      if root then
-        local file = io.open(root .. "/go.mod", "r")
-        if file then
-          local first_line = file:read "*l"
-          file:close()
-          if first_line then return first_line:match "^module%s+(.+)$" end
-        end
-      end
-      return nil
+      if not root or vim.fn.executable "go" ~= 1 then return nil end
+
+      -- Let Go parse comments, whitespace and quoted/escaped module paths. With only
+      -- -json, `go mod edit` reads the file without rewriting it or resolving dependencies.
+      -- Keep this save-path lookup bounded and prevent automatic toolchain downloads.
+      local result = vim
+        .system({ "go", "mod", "edit", "-json", root .. "/go.mod" }, {
+          text = true,
+          env = { GOTOOLCHAIN = "local" },
+        })
+        :wait(250)
+      if result.code ~= 0 then return nil end
+      local ok, mod = pcall(vim.json.decode, result.stdout)
+      if ok and type(mod.Module) == "table" and mod.Module.Path ~= "" then return mod.Module.Path end
     end
 
     -- Go import grouping is project-aware rather than hardcoded to an org: `-local <module>`
